@@ -3,13 +3,14 @@
 #include <random>
 #include <ranges>
 #include <print>
-namespace rg = ranges;
-namespace vs = rg::views;
-using byte_t = std::uint8_t;
-
 
 namespace mr_crypto 
 {
+	namespace rg = ranges;
+	namespace vs = rg::views;
+	using byte_t = std::uint8_t;
+	using view_t = std::string_view;
+
 	namespace details
 	{
 		namespace convert
@@ -18,7 +19,7 @@ namespace mr_crypto
 			static constexpr auto my_hex_table = std::string_view{ "0123456789abcdef" };
 			static constexpr auto m_padding = '=';
 
-			auto to_base64(std::string_view input) noexcept
+			auto to_base64(view_t input) noexcept
 			{
 				auto const o_size = ((4 * input.size() / 3) + 3) & ~3;
 				auto output = std::string(o_size, '=');
@@ -53,7 +54,7 @@ namespace mr_crypto
 				return output;
 			}
 
-			auto to_hex(std::string_view data) noexcept
+			auto to_hex(view_t data) noexcept
 			{
 				auto result = std::string(data.size() * 2, '\0');
 				auto it_res = result.begin();
@@ -68,17 +69,23 @@ namespace mr_crypto
 			}
 		}
 
-		template <std::string(*just_fun)(std::string_view)>
+		template <std::string(*just_fun)(view_t)>
 		struct adapter_base_f : std::ranges::range_adaptor_closure<adapter_base_f<just_fun>>
 		{
-			auto operator()(std::string_view input) const noexcept
+			auto operator()(view_t input) const noexcept
 			{
 				return just_fun(input);
 			}
 		};
 
+		constexpr auto cipher_final_size(size_t in_size, int block_size) noexcept
+		{
+			size_t numBlocks = (in_size + block_size - 1) / block_size;
+			return numBlocks * block_size;
+		}
+
 		template <const EVP_MD* (*evp_x)()>
-		auto hash(std::string_view input) noexcept
+		auto hash(view_t input) noexcept
 		{
 			auto digest = evp_x();
 			auto output = std::string(EVP_MD_get_size(digest), '\0');
@@ -86,8 +93,30 @@ namespace mr_crypto
 			return output;
 		}
 
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt>
+		auto cipher(view_t input, view_t key, view_t iv) noexcept
+		{
+			auto mode_c = evp_cipher_x();
+			auto output = std::string(cipher_final_size(input.size(), EVP_CIPHER_block_size(mode_c)), '\0');
+			auto it_out = reinterpret_cast<byte_t*>(output.data());
+			auto size_i = int{};
+			auto size_f = int{};
+			{
+				constexpr auto init = to_encrypt ? EVP_EncryptInit : EVP_DecryptInit;
+				constexpr auto ping = to_encrypt ? EVP_EncryptUpdate : EVP_DecryptUpdate;
+				constexpr auto ends = to_encrypt ? EVP_EncryptFinal : EVP_DecryptFinal;
+
+				auto state = EVP_CIPHER_CTX_new();
+				init(state, mode_c, reinterpret_cast<const byte_t*>(key.data()), reinterpret_cast<const byte_t*>(iv.data()));
+				ping(state, it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size());
+				ends(state, it_out + size_i, &size_f);
+				EVP_CIPHER_CTX_free(state);
+			}
+			return output;
+		}
+
 		template <const EVP_MD* (*evp_x)()>
-		constexpr auto hash_adapter = adapter_base_f<hash<evp_x>>{};
+		static constexpr auto hash_adapter = adapter_base_f<hash<evp_x>>{};
 	}
 
 	namespace convert
