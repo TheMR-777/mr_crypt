@@ -78,10 +78,9 @@ namespace mr_crypto
 			}
 		};
 
-		constexpr auto cipher_final_size(size_t in_size, int block_size) noexcept
+		constexpr auto cipher_final_size(const size_t in_size, const int block_size) noexcept
 		{
-			size_t numBlocks = (in_size + block_size - 1) / block_size;
-			return numBlocks * block_size;
+			return ((in_size + block_size - 1) / block_size) * block_size;
 		}
 
 		template <const EVP_MD* (*evp_x)()>
@@ -121,6 +120,8 @@ namespace mr_crypto
 
 	namespace generate
 	{
+		constexpr auto key = random_byte_n;
+
 		auto random_byte() noexcept -> byte_t
 		{
 			static auto my_engine = std::mt19937_64{ std::random_device{ }() };
@@ -130,6 +131,11 @@ namespace mr_crypto
 		auto random_byte_n(const size_t n) noexcept
 		{
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
+		}
+
+		auto guid() noexcept
+		{
+			return random_byte_n(16);
 		}
 	}
 
