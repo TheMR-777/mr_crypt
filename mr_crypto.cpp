@@ -4,7 +4,7 @@
 #include <ranges>
 #include <print>
 
-namespace mr_crypto
+namespace mr_crypt
 {
 	namespace rg = ranges;
 	namespace vs = rg::views;
@@ -118,31 +118,31 @@ namespace mr_crypto
 		static constexpr auto hash_adapter = adapter_base_f<hash<evp_x>>{};
 	}
 
+	namespace convert
+	{
+		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
+		constexpr auto to_hex = details::adapter_base_f<details::convert::to_hex>{};
+	}
+
 	namespace generate
 	{
-		constexpr auto key = random_byte_n;
-
 		auto random_byte() noexcept -> byte_t
 		{
-			static auto my_engine = std::mt19937_64{ std::random_device{ }() };
-			return std::uniform_int_distribution<uint16_t>{ 0,255 }(my_engine);
+			static auto my_engine = std::mt19937{ std::random_device{}() };
+			return std::uniform_int_distribution<int>{ 0, 255 }(my_engine);
 		}
 
-		auto random_byte_n(const size_t n) noexcept
+		auto random_bytes(const size_t n) noexcept
 		{
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
 		}
 
 		auto guid() noexcept
 		{
-			return random_byte_n(16);
+			return random_bytes(16);
 		}
-	}
 
-	namespace convert
-	{
-		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
-		constexpr auto to_hex = details::adapter_base_f<details::convert::to_hex>{};
+		constexpr auto key = random_bytes;
 	}
 
 	namespace hash
