@@ -132,7 +132,7 @@ namespace mr_crypt
 			return std::uniform_int_distribution<int>{ 0, 255 }(my_engine);
 		}
 
-		auto random_bytes(const size_t n) noexcept
+		auto random_bytes(const size_t n = 32) noexcept
 		{
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
 		}
