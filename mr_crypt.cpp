@@ -11,6 +11,27 @@ namespace mr_crypt
 	using byte_t = std::uint8_t;
 	using view_t = std::string_view;
 
+	namespace produce
+	{
+		auto random_byte() noexcept -> byte_t
+		{
+			static auto my_engine = std::mt19937{ std::random_device{}() };
+			return std::uniform_int_distribution<int>{ 0, 255 }(my_engine);
+		}
+
+		auto random_bytes(const size_t n = 32) noexcept
+		{
+			return vs::generate_n(random_byte, n) | rg::to<std::string>;
+		}
+
+		auto guid() noexcept
+		{
+			return random_bytes(16);
+		}
+
+		constexpr auto key = random_bytes;
+	}
+
 	namespace details
 	{
 		namespace convert
@@ -93,7 +114,7 @@ namespace mr_crypt
 		}
 
 		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt>
-		auto cipher(view_t input, view_t key, view_t iv) noexcept
+		auto cipher(view_t input, view_t key, view_t iv = {}) noexcept
 		{
 			auto mode_c = evp_cipher_x();
 			auto output = std::string(cipher_final_size(input.size(), EVP_CIPHER_block_size(mode_c)), '\0');
@@ -114,6 +135,59 @@ namespace mr_crypt
 			return output;
 		}
 
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt>
+		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt>>
+		{
+			view_t my_key, my_iv;
+			constexpr cipher_adapter_wrap(view_t key, view_t iv) noexcept : my_key{ key }, my_iv{ iv } {}
+			auto operator()(view_t input) const noexcept
+			{
+				return cipher<evp_cipher_x, to_encrypt>(input, my_key, my_iv);
+			}
+		};
+
+		template <const EVP_CIPHER* (*evp_cipher_x)()>
+		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true>;
+
+		template <const EVP_CIPHER* (*evp_cipher_x)()>
+		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false>;
+
+		template <const EVP_CIPHER* (*evp_cipher_x)()>
+		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>
+		{
+			const std::string my_key = produce::key(EVP_CIPHER_key_length(evp_cipher_x()));
+			const std::string the_iv = produce::key(EVP_CIPHER_iv_length(evp_cipher_x()));
+
+			constexpr cipher_stateful_t() noexcept = default;
+			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
+			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : my_key{ key }, the_iv{ iv } {}
+
+			auto encrypt() const noexcept
+			{
+				return enc_adapter<evp_cipher_x>{ my_key, the_iv };
+			}
+
+			auto decrypt() const noexcept
+			{
+				return dec_adapter<evp_cipher_x>{ my_key, the_iv };
+			}
+
+			auto encrypt(view_t input) const noexcept
+			{
+				return input | encrypt();
+			}
+
+			auto decrypt(view_t input) const noexcept
+			{
+				return input | decrypt();
+			}
+
+			auto operator()(view_t input) const noexcept
+			{
+				return encrypt(input);
+			}
+		};
+
 		template <const EVP_MD* (*evp_x)()>
 		static constexpr auto hash_adapter = adapter_base_f<hash<evp_x>>{};
 	}
@@ -124,28 +198,23 @@ namespace mr_crypt
 		constexpr auto to_hex = details::adapter_base_f<details::convert::to_hex>{};
 	}
 
-	namespace generate
+	namespace encrypt
 	{
-		auto random_byte() noexcept -> byte_t
-		{
-			static auto my_engine = std::mt19937{ std::random_device{}() };
-			return std::uniform_int_distribution<int>{ 0, 255 }(my_engine);
-		}
-
-		auto random_bytes(const size_t n = 32) noexcept
-		{
-			return vs::generate_n(random_byte, n) | rg::to<std::string>;
-		}
-
-		auto guid() noexcept
-		{
-			return random_bytes(16);
-		}
-
-		constexpr auto key = random_bytes;
+		using aes_128_cbc = details::enc_adapter<EVP_aes_128_cbc>;
 	}
 
-	namespace hash
+	namespace decrypt
+	{
+		using aes_128_cbc = details::dec_adapter<EVP_aes_128_cbc>;
+	}
+
+	namespace majesty
+	{
+		using aes_128_ecb = details::cipher_stateful_t<EVP_aes_128_ecb>;
+		using aes_128_cbc = details::cipher_stateful_t<EVP_aes_128_cbc>;
+	}
+
+	namespace hashing
 	{
 		constexpr auto md_5 = details::hash_adapter<EVP_md5>;
 		constexpr auto md_5_sha_160 = details::hash_adapter<EVP_sha1>;
