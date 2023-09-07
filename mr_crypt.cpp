@@ -200,18 +200,83 @@ namespace mr_crypt
 
 	namespace encrypt
 	{
+		using aes_128_ecb = details::enc_adapter<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::enc_adapter<EVP_aes_128_cbc>;
+		using aes_128_ofb = details::enc_adapter<EVP_aes_128_ofb>;
+		using aes_128_cfb1 = details::enc_adapter<EVP_aes_128_cfb1>;
+		using aes_128_cfb8 = details::enc_adapter<EVP_aes_128_cfb8>;
+		using aes_128_cfb128 = details::enc_adapter<EVP_aes_128_cfb128>;
+		using aes_128_cfb = aes_128_cfb128;
+
+		using aes_192_ecb = details::enc_adapter<EVP_aes_192_ecb>;
+		using aes_192_cbc = details::enc_adapter<EVP_aes_192_cbc>;
+		using aes_192_ofb = details::enc_adapter<EVP_aes_192_ofb>;
+		using aes_192_cfb1 = details::enc_adapter<EVP_aes_192_cfb1>;
+		using aes_192_cfb8 = details::enc_adapter<EVP_aes_192_cfb8>;
+		using aes_192_cfb128 = details::enc_adapter<EVP_aes_192_cfb128>;
+		using aes_192_cfb = aes_192_cfb128;
+
+		using aes_256_ecb = details::enc_adapter<EVP_aes_256_ecb>;
+		using aes_256_cbc = details::enc_adapter<EVP_aes_256_cbc>;
+		using aes_256_ofb = details::enc_adapter<EVP_aes_256_ofb>;
+		using aes_256_cfb1 = details::enc_adapter<EVP_aes_256_cfb1>;
+		using aes_256_cfb8 = details::enc_adapter<EVP_aes_256_cfb8>;
+		using aes_256_cfb128 = details::enc_adapter<EVP_aes_256_cfb128>;
+		using aes_256_cfb = aes_256_cfb128;
 	}
 
 	namespace decrypt
 	{
+		using aes_128_ecb = details::dec_adapter<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::dec_adapter<EVP_aes_128_cbc>;
+		using aes_128_ofb = details::dec_adapter<EVP_aes_128_ofb>;
+		using aes_128_cfb1 = details::dec_adapter<EVP_aes_128_cfb1>;
+		using aes_128_cfb8 = details::dec_adapter<EVP_aes_128_cfb8>;
+		using aes_128_cfb128 = details::dec_adapter<EVP_aes_128_cfb128>;
+		using aes_128_cfb = aes_128_cfb128;
+
+		using aes_192_ecb = details::dec_adapter<EVP_aes_192_ecb>;
+		using aes_192_cbc = details::dec_adapter<EVP_aes_192_cbc>;
+		using aes_192_ofb = details::dec_adapter<EVP_aes_192_ofb>;
+		using aes_192_cfb1 = details::dec_adapter<EVP_aes_192_cfb1>;
+		using aes_192_cfb8 = details::dec_adapter<EVP_aes_192_cfb8>;
+		using aes_192_cfb128 = details::dec_adapter<EVP_aes_192_cfb128>;
+		using aes_192_cfb = aes_192_cfb128;
+
+		using aes_256_ecb = details::dec_adapter<EVP_aes_256_ecb>;
+		using aes_256_cbc = details::dec_adapter<EVP_aes_256_cbc>;
+		using aes_256_ofb = details::dec_adapter<EVP_aes_256_ofb>;
+		using aes_256_cfb1 = details::dec_adapter<EVP_aes_256_cfb1>;
+		using aes_256_cfb8 = details::dec_adapter<EVP_aes_256_cfb8>;
+		using aes_256_cfb128 = details::dec_adapter<EVP_aes_256_cfb128>;
+		using aes_256_cfb = aes_256_cfb128;
 	}
 
 	namespace majesty
 	{
 		using aes_128_ecb = details::cipher_stateful_t<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::cipher_stateful_t<EVP_aes_128_cbc>;
+		using aes_128_ofb = details::cipher_stateful_t<EVP_aes_128_ofb>;
+		using aes_128_cfb1 = details::cipher_stateful_t<EVP_aes_128_cfb1>;
+		using aes_128_cfb8 = details::cipher_stateful_t<EVP_aes_128_cfb8>;
+		using aes_128_cfb128 = details::cipher_stateful_t<EVP_aes_128_cfb128>;
+		using aes_128_cfb = aes_128_cfb128;
+
+		using aes_192_ecb = details::cipher_stateful_t<EVP_aes_192_ecb>;
+		using aes_192_cbc = details::cipher_stateful_t<EVP_aes_192_cbc>;
+		using aes_192_ofb = details::cipher_stateful_t<EVP_aes_192_ofb>;
+		using aes_192_cfb1 = details::cipher_stateful_t<EVP_aes_192_cfb1>;
+		using aes_192_cfb8 = details::cipher_stateful_t<EVP_aes_192_cfb8>;
+		using aes_192_cfb128 = details::cipher_stateful_t<EVP_aes_192_cfb128>;
+		using aes_192_cfb = aes_192_cfb128;
+
+		using aes_256_ecb = details::cipher_stateful_t<EVP_aes_256_ecb>;
+		using aes_256_cbc = details::cipher_stateful_t<EVP_aes_256_cbc>;
+		using aes_256_ofb = details::cipher_stateful_t<EVP_aes_256_ofb>;
+		using aes_256_cfb1 = details::cipher_stateful_t<EVP_aes_256_cfb1>;
+		using aes_256_cfb8 = details::cipher_stateful_t<EVP_aes_256_cfb8>;
+		using aes_256_cfb128 = details::cipher_stateful_t<EVP_aes_256_cfb128>;
+		using aes_256_cfb = aes_256_cfb128;
 	}
 
 	namespace hashing
