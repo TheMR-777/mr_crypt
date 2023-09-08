@@ -203,6 +203,7 @@ namespace mr_crypt
 		using aes_128_ecb = details::enc_adapter<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::enc_adapter<EVP_aes_128_cbc>;
 		using aes_128_ofb = details::enc_adapter<EVP_aes_128_ofb>;
+		using aes_128_ctr = details::enc_adapter<EVP_aes_128_ctr>;
 		using aes_128_cfb1 = details::enc_adapter<EVP_aes_128_cfb1>;
 		using aes_128_cfb8 = details::enc_adapter<EVP_aes_128_cfb8>;
 		using aes_128_cfb128 = details::enc_adapter<EVP_aes_128_cfb128>;
@@ -211,6 +212,7 @@ namespace mr_crypt
 		using aes_192_ecb = details::enc_adapter<EVP_aes_192_ecb>;
 		using aes_192_cbc = details::enc_adapter<EVP_aes_192_cbc>;
 		using aes_192_ofb = details::enc_adapter<EVP_aes_192_ofb>;
+		using aes_192_ctr = details::enc_adapter<EVP_aes_192_ctr>;
 		using aes_192_cfb1 = details::enc_adapter<EVP_aes_192_cfb1>;
 		using aes_192_cfb8 = details::enc_adapter<EVP_aes_192_cfb8>;
 		using aes_192_cfb128 = details::enc_adapter<EVP_aes_192_cfb128>;
@@ -219,6 +221,7 @@ namespace mr_crypt
 		using aes_256_ecb = details::enc_adapter<EVP_aes_256_ecb>;
 		using aes_256_cbc = details::enc_adapter<EVP_aes_256_cbc>;
 		using aes_256_ofb = details::enc_adapter<EVP_aes_256_ofb>;
+		using aes_256_ctr = details::enc_adapter<EVP_aes_256_ctr>;
 		using aes_256_cfb1 = details::enc_adapter<EVP_aes_256_cfb1>;
 		using aes_256_cfb8 = details::enc_adapter<EVP_aes_256_cfb8>;
 		using aes_256_cfb128 = details::enc_adapter<EVP_aes_256_cfb128>;
@@ -227,6 +230,7 @@ namespace mr_crypt
 		using aria_128_ecb = details::enc_adapter<EVP_aria_128_ecb>;
 		using aria_128_cbc = details::enc_adapter<EVP_aria_128_cbc>;
 		using aria_128_ofb = details::enc_adapter<EVP_aria_128_ofb>;
+		using aria_128_ctr = details::enc_adapter<EVP_aria_128_ctr>;
 		using aria_128_cfb1 = details::enc_adapter<EVP_aria_128_cfb1>;
 		using aria_128_cfb8 = details::enc_adapter<EVP_aria_128_cfb8>;
 		using aria_128_cfb128 = details::enc_adapter<EVP_aria_128_cfb128>;
@@ -235,6 +239,7 @@ namespace mr_crypt
 		using aria_192_ecb = details::enc_adapter<EVP_aria_192_ecb>;
 		using aria_192_cbc = details::enc_adapter<EVP_aria_192_cbc>;
 		using aria_192_ofb = details::enc_adapter<EVP_aria_192_ofb>;
+		using aria_192_ctr = details::enc_adapter<EVP_aria_192_ctr>;
 		using aria_192_cfb1 = details::enc_adapter<EVP_aria_192_cfb1>;
 		using aria_192_cfb8 = details::enc_adapter<EVP_aria_192_cfb8>;
 		using aria_192_cfb128 = details::enc_adapter<EVP_aria_192_cfb128>;
@@ -243,6 +248,7 @@ namespace mr_crypt
 		using aria_256_ecb = details::enc_adapter<EVP_aria_256_ecb>;
 		using aria_256_cbc = details::enc_adapter<EVP_aria_256_cbc>;
 		using aria_256_ofb = details::enc_adapter<EVP_aria_256_ofb>;
+		using aria_256_ctr = details::enc_adapter<EVP_aria_256_ctr>;
 		using aria_256_cfb1 = details::enc_adapter<EVP_aria_256_cfb1>;
 		using aria_256_cfb8 = details::enc_adapter<EVP_aria_256_cfb8>;
 		using aria_256_cfb128 = details::enc_adapter<EVP_aria_256_cfb128>;
@@ -251,6 +257,7 @@ namespace mr_crypt
 		using camellia_128_ecb = details::enc_adapter<EVP_camellia_128_ecb>;
 		using camellia_128_cbc = details::enc_adapter<EVP_camellia_128_cbc>;
 		using camellia_128_ofb = details::enc_adapter<EVP_camellia_128_ofb>;
+		using camellia_128_ctr = details::enc_adapter<EVP_camellia_128_ctr>;
 		using camellia_128_cfb1 = details::enc_adapter<EVP_camellia_128_cfb1>;
 		using camellia_128_cfb8 = details::enc_adapter<EVP_camellia_128_cfb8>;
 		using camellia_128_cfb128 = details::enc_adapter<EVP_camellia_128_cfb128>;
@@ -259,6 +266,7 @@ namespace mr_crypt
 		using camellia_192_ecb = details::enc_adapter<EVP_camellia_192_ecb>;
 		using camellia_192_cbc = details::enc_adapter<EVP_camellia_192_cbc>;
 		using camellia_192_ofb = details::enc_adapter<EVP_camellia_192_ofb>;
+		using camellia_192_ctr = details::enc_adapter<EVP_camellia_192_ctr>;
 		using camellia_192_cfb1 = details::enc_adapter<EVP_camellia_192_cfb1>;
 		using camellia_192_cfb8 = details::enc_adapter<EVP_camellia_192_cfb8>;
 		using camellia_192_cfb128 = details::enc_adapter<EVP_camellia_192_cfb128>;
@@ -267,6 +275,7 @@ namespace mr_crypt
 		using camellia_256_ecb = details::enc_adapter<EVP_camellia_256_ecb>;
 		using camellia_256_cbc = details::enc_adapter<EVP_camellia_256_cbc>;
 		using camellia_256_ofb = details::enc_adapter<EVP_camellia_256_ofb>;
+		using camellia_256_ctr = details::enc_adapter<EVP_camellia_256_ctr>;
 		using camellia_256_cfb1 = details::enc_adapter<EVP_camellia_256_cfb1>;
 		using camellia_256_cfb8 = details::enc_adapter<EVP_camellia_256_cfb8>;
 		using camellia_256_cfb128 = details::enc_adapter<EVP_camellia_256_cfb128>;
@@ -275,6 +284,7 @@ namespace mr_crypt
 		using sm4_ecb = details::enc_adapter<EVP_sm4_ecb>;
 		using sm4_cbc = details::enc_adapter<EVP_sm4_cbc>;
 		using sm4_ofb = details::enc_adapter<EVP_sm4_ofb>;
+		using sm4_ctr = details::enc_adapter<EVP_sm4_ctr>;
 		using sm4_cfb = details::enc_adapter<EVP_sm4_cfb>;
 		using sm4_cfb128 = details::enc_adapter<EVP_sm4_cfb128>;
 
@@ -287,6 +297,7 @@ namespace mr_crypt
 		using aes_128_ecb = details::dec_adapter<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::dec_adapter<EVP_aes_128_cbc>;
 		using aes_128_ofb = details::dec_adapter<EVP_aes_128_ofb>;
+		using aes_128_ctr = details::dec_adapter<EVP_aes_128_ctr>;
 		using aes_128_cfb1 = details::dec_adapter<EVP_aes_128_cfb1>;
 		using aes_128_cfb8 = details::dec_adapter<EVP_aes_128_cfb8>;
 		using aes_128_cfb128 = details::dec_adapter<EVP_aes_128_cfb128>;
@@ -295,6 +306,7 @@ namespace mr_crypt
 		using aes_192_ecb = details::dec_adapter<EVP_aes_192_ecb>;
 		using aes_192_cbc = details::dec_adapter<EVP_aes_192_cbc>;
 		using aes_192_ofb = details::dec_adapter<EVP_aes_192_ofb>;
+		using aes_192_ctr = details::dec_adapter<EVP_aes_192_ctr>;
 		using aes_192_cfb1 = details::dec_adapter<EVP_aes_192_cfb1>;
 		using aes_192_cfb8 = details::dec_adapter<EVP_aes_192_cfb8>;
 		using aes_192_cfb128 = details::dec_adapter<EVP_aes_192_cfb128>;
@@ -303,6 +315,7 @@ namespace mr_crypt
 		using aes_256_ecb = details::dec_adapter<EVP_aes_256_ecb>;
 		using aes_256_cbc = details::dec_adapter<EVP_aes_256_cbc>;
 		using aes_256_ofb = details::dec_adapter<EVP_aes_256_ofb>;
+		using aes_256_ctr = details::dec_adapter<EVP_aes_256_ctr>;
 		using aes_256_cfb1 = details::dec_adapter<EVP_aes_256_cfb1>;
 		using aes_256_cfb8 = details::dec_adapter<EVP_aes_256_cfb8>;
 		using aes_256_cfb128 = details::dec_adapter<EVP_aes_256_cfb128>;
@@ -311,6 +324,7 @@ namespace mr_crypt
 		using aria_128_ecb = details::dec_adapter<EVP_aria_128_ecb>;
 		using aria_128_cbc = details::dec_adapter<EVP_aria_128_cbc>;
 		using aria_128_ofb = details::dec_adapter<EVP_aria_128_ofb>;
+		using aria_128_ctr = details::dec_adapter<EVP_aria_128_ctr>;
 		using aria_128_cfb1 = details::dec_adapter<EVP_aria_128_cfb1>;
 		using aria_128_cfb8 = details::dec_adapter<EVP_aria_128_cfb8>;
 		using aria_128_cfb128 = details::dec_adapter<EVP_aria_128_cfb128>;
@@ -319,6 +333,7 @@ namespace mr_crypt
 		using aria_192_ecb = details::dec_adapter<EVP_aria_192_ecb>;
 		using aria_192_cbc = details::dec_adapter<EVP_aria_192_cbc>;
 		using aria_192_ofb = details::dec_adapter<EVP_aria_192_ofb>;
+		using aria_192_ctr = details::dec_adapter<EVP_aria_192_ctr>;
 		using aria_192_cfb1 = details::dec_adapter<EVP_aria_192_cfb1>;
 		using aria_192_cfb8 = details::dec_adapter<EVP_aria_192_cfb8>;
 		using aria_192_cfb128 = details::dec_adapter<EVP_aria_192_cfb128>;
@@ -327,6 +342,7 @@ namespace mr_crypt
 		using aria_256_ecb = details::dec_adapter<EVP_aria_256_ecb>;
 		using aria_256_cbc = details::dec_adapter<EVP_aria_256_cbc>;
 		using aria_256_ofb = details::dec_adapter<EVP_aria_256_ofb>;
+		using aria_256_ctr = details::dec_adapter<EVP_aria_256_ctr>;
 		using aria_256_cfb1 = details::dec_adapter<EVP_aria_256_cfb1>;
 		using aria_256_cfb8 = details::dec_adapter<EVP_aria_256_cfb8>;
 		using aria_256_cfb128 = details::dec_adapter<EVP_aria_256_cfb128>;
@@ -335,6 +351,7 @@ namespace mr_crypt
 		using camellia_128_ecb = details::dec_adapter<EVP_camellia_128_ecb>;
 		using camellia_128_cbc = details::dec_adapter<EVP_camellia_128_cbc>;
 		using camellia_128_ofb = details::dec_adapter<EVP_camellia_128_ofb>;
+		using camellia_128_ctr = details::dec_adapter<EVP_camellia_128_ctr>;
 		using camellia_128_cfb1 = details::dec_adapter<EVP_camellia_128_cfb1>;
 		using camellia_128_cfb8 = details::dec_adapter<EVP_camellia_128_cfb8>;
 		using camellia_128_cfb128 = details::dec_adapter<EVP_camellia_128_cfb128>;
@@ -343,6 +360,7 @@ namespace mr_crypt
 		using camellia_192_ecb = details::dec_adapter<EVP_camellia_192_ecb>;
 		using camellia_192_cbc = details::dec_adapter<EVP_camellia_192_cbc>;
 		using camellia_192_ofb = details::dec_adapter<EVP_camellia_192_ofb>;
+		using camellia_192_ctr = details::dec_adapter<EVP_camellia_192_ctr>;
 		using camellia_192_cfb1 = details::dec_adapter<EVP_camellia_192_cfb1>;
 		using camellia_192_cfb8 = details::dec_adapter<EVP_camellia_192_cfb8>;
 		using camellia_192_cfb128 = details::dec_adapter<EVP_camellia_192_cfb128>;
@@ -351,6 +369,7 @@ namespace mr_crypt
 		using camellia_256_ecb = details::dec_adapter<EVP_camellia_256_ecb>;
 		using camellia_256_cbc = details::dec_adapter<EVP_camellia_256_cbc>;
 		using camellia_256_ofb = details::dec_adapter<EVP_camellia_256_ofb>;
+		using camellia_256_ctr = details::dec_adapter<EVP_camellia_256_ctr>;
 		using camellia_256_cfb1 = details::dec_adapter<EVP_camellia_256_cfb1>;
 		using camellia_256_cfb8 = details::dec_adapter<EVP_camellia_256_cfb8>;
 		using camellia_256_cfb128 = details::dec_adapter<EVP_camellia_256_cfb128>;
@@ -359,6 +378,7 @@ namespace mr_crypt
 		using sm4_ecb = details::dec_adapter<EVP_sm4_ecb>;
 		using sm4_cbc = details::dec_adapter<EVP_sm4_cbc>;
 		using sm4_ofb = details::dec_adapter<EVP_sm4_ofb>;
+		using sm4_ctr = details::dec_adapter<EVP_sm4_ctr>;
 		using sm4_cfb = details::dec_adapter<EVP_sm4_cfb>;
 		using sm4_cfb128 = details::dec_adapter<EVP_sm4_cfb128>;
 
@@ -371,6 +391,7 @@ namespace mr_crypt
 		using aes_128_ecb = details::cipher_stateful_t<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::cipher_stateful_t<EVP_aes_128_cbc>;
 		using aes_128_ofb = details::cipher_stateful_t<EVP_aes_128_ofb>;
+		using aes_128_ctr = details::cipher_stateful_t<EVP_aes_128_ctr>;
 		using aes_128_cfb1 = details::cipher_stateful_t<EVP_aes_128_cfb1>;
 		using aes_128_cfb8 = details::cipher_stateful_t<EVP_aes_128_cfb8>;
 		using aes_128_cfb128 = details::cipher_stateful_t<EVP_aes_128_cfb128>;
@@ -379,6 +400,7 @@ namespace mr_crypt
 		using aes_192_ecb = details::cipher_stateful_t<EVP_aes_192_ecb>;
 		using aes_192_cbc = details::cipher_stateful_t<EVP_aes_192_cbc>;
 		using aes_192_ofb = details::cipher_stateful_t<EVP_aes_192_ofb>;
+		using aes_192_ctr = details::cipher_stateful_t<EVP_aes_192_ctr>;
 		using aes_192_cfb1 = details::cipher_stateful_t<EVP_aes_192_cfb1>;
 		using aes_192_cfb8 = details::cipher_stateful_t<EVP_aes_192_cfb8>;
 		using aes_192_cfb128 = details::cipher_stateful_t<EVP_aes_192_cfb128>;
@@ -387,6 +409,7 @@ namespace mr_crypt
 		using aes_256_ecb = details::cipher_stateful_t<EVP_aes_256_ecb>;
 		using aes_256_cbc = details::cipher_stateful_t<EVP_aes_256_cbc>;
 		using aes_256_ofb = details::cipher_stateful_t<EVP_aes_256_ofb>;
+		using aes_256_ctr = details::cipher_stateful_t<EVP_aes_256_ctr>;
 		using aes_256_cfb1 = details::cipher_stateful_t<EVP_aes_256_cfb1>;
 		using aes_256_cfb8 = details::cipher_stateful_t<EVP_aes_256_cfb8>;
 		using aes_256_cfb128 = details::cipher_stateful_t<EVP_aes_256_cfb128>;
@@ -395,6 +418,7 @@ namespace mr_crypt
 		using aria_128_ecb = details::cipher_stateful_t<EVP_aria_128_ecb>;
 		using aria_128_cbc = details::cipher_stateful_t<EVP_aria_128_cbc>;
 		using aria_128_ofb = details::cipher_stateful_t<EVP_aria_128_ofb>;
+		using aria_128_ctr = details::cipher_stateful_t<EVP_aria_128_ctr>;
 		using aria_128_cfb1 = details::cipher_stateful_t<EVP_aria_128_cfb1>;
 		using aria_128_cfb8 = details::cipher_stateful_t<EVP_aria_128_cfb8>;
 		using aria_128_cfb128 = details::cipher_stateful_t<EVP_aria_128_cfb128>;
@@ -403,6 +427,7 @@ namespace mr_crypt
 		using aria_192_ecb = details::cipher_stateful_t<EVP_aria_192_ecb>;
 		using aria_192_cbc = details::cipher_stateful_t<EVP_aria_192_cbc>;
 		using aria_192_ofb = details::cipher_stateful_t<EVP_aria_192_ofb>;
+		using aria_192_ctr = details::cipher_stateful_t<EVP_aria_192_ctr>;
 		using aria_192_cfb1 = details::cipher_stateful_t<EVP_aria_192_cfb1>;
 		using aria_192_cfb8 = details::cipher_stateful_t<EVP_aria_192_cfb8>;
 		using aria_192_cfb128 = details::cipher_stateful_t<EVP_aria_192_cfb128>;
@@ -411,6 +436,7 @@ namespace mr_crypt
 		using aria_256_ecb = details::cipher_stateful_t<EVP_aria_256_ecb>;
 		using aria_256_cbc = details::cipher_stateful_t<EVP_aria_256_cbc>;
 		using aria_256_ofb = details::cipher_stateful_t<EVP_aria_256_ofb>;
+		using aria_256_ctr = details::cipher_stateful_t<EVP_aria_256_ctr>;
 		using aria_256_cfb1 = details::cipher_stateful_t<EVP_aria_256_cfb1>;
 		using aria_256_cfb8 = details::cipher_stateful_t<EVP_aria_256_cfb8>;
 		using aria_256_cfb128 = details::cipher_stateful_t<EVP_aria_256_cfb128>;
@@ -419,6 +445,7 @@ namespace mr_crypt
 		using camellia_128_ecb = details::cipher_stateful_t<EVP_camellia_128_ecb>;
 		using camellia_128_cbc = details::cipher_stateful_t<EVP_camellia_128_cbc>;
 		using camellia_128_ofb = details::cipher_stateful_t<EVP_camellia_128_ofb>;
+		using camellia_128_ctr = details::cipher_stateful_t<EVP_camellia_128_ctr>;
 		using camellia_128_cfb1 = details::cipher_stateful_t<EVP_camellia_128_cfb1>;
 		using camellia_128_cfb8 = details::cipher_stateful_t<EVP_camellia_128_cfb8>;
 		using camellia_128_cfb128 = details::cipher_stateful_t<EVP_camellia_128_cfb128>;
@@ -427,6 +454,7 @@ namespace mr_crypt
 		using camellia_192_ecb = details::cipher_stateful_t<EVP_camellia_192_ecb>;
 		using camellia_192_cbc = details::cipher_stateful_t<EVP_camellia_192_cbc>;
 		using camellia_192_ofb = details::cipher_stateful_t<EVP_camellia_192_ofb>;
+		using camellia_192_ctr = details::cipher_stateful_t<EVP_camellia_192_ctr>;
 		using camellia_192_cfb1 = details::cipher_stateful_t<EVP_camellia_192_cfb1>;
 		using camellia_192_cfb8 = details::cipher_stateful_t<EVP_camellia_192_cfb8>;
 		using camellia_192_cfb128 = details::cipher_stateful_t<EVP_camellia_192_cfb128>;
@@ -435,6 +463,7 @@ namespace mr_crypt
 		using camellia_256_ecb = details::cipher_stateful_t<EVP_camellia_256_ecb>;
 		using camellia_256_cbc = details::cipher_stateful_t<EVP_camellia_256_cbc>;
 		using camellia_256_ofb = details::cipher_stateful_t<EVP_camellia_256_ofb>;
+		using camellia_256_ctr = details::cipher_stateful_t<EVP_camellia_256_ctr>;
 		using camellia_256_cfb1 = details::cipher_stateful_t<EVP_camellia_256_cfb1>;
 		using camellia_256_cfb8 = details::cipher_stateful_t<EVP_camellia_256_cfb8>;
 		using camellia_256_cfb128 = details::cipher_stateful_t<EVP_camellia_256_cfb128>;
@@ -443,6 +472,7 @@ namespace mr_crypt
 		using sm4_ecb = details::cipher_stateful_t<EVP_sm4_ecb>;
 		using sm4_cbc = details::cipher_stateful_t<EVP_sm4_cbc>;
 		using sm4_ofb = details::cipher_stateful_t<EVP_sm4_ofb>;
+		using sm4_ctr = details::cipher_stateful_t<EVP_sm4_ctr>;
 		using sm4_cfb = details::cipher_stateful_t<EVP_sm4_cfb>;
 		using sm4_cfb128 = details::cipher_stateful_t<EVP_sm4_cfb128>;
 
