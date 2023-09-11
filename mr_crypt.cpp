@@ -99,6 +99,20 @@ namespace mr_crypt
 			}
 		};
 
+		template <const EVP_CIPHER* (*evp_cipher_x)()>
+		struct info_provider
+		{
+			static auto key_size() noexcept
+			{
+				return EVP_CIPHER_key_length(evp_cipher_x());
+			}
+
+			static auto iv_size() noexcept
+			{
+				return EVP_CIPHER_iv_length(evp_cipher_x());
+			}
+		};
+
 		constexpr auto cipher_final_size(const size_t in_size, const int block_size) noexcept
 		{
 			return ((in_size + block_size - 1) / block_size) * block_size;
@@ -136,7 +150,7 @@ namespace mr_crypt
 		}
 
 		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt>
-		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt>>
+		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt>>, info_provider<evp_cipher_x>
 		{
 			view_t my_key, my_iv;
 			constexpr cipher_adapter_wrap(view_t key, view_t iv) noexcept : my_key{ key }, my_iv{ iv } {}
@@ -153,10 +167,10 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false>;
 
 		template <const EVP_CIPHER* (*evp_cipher_x)()>
-		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>
+		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>, info_provider<evp_cipher_x>
 		{
-			const std::string my_key = produce::key(EVP_CIPHER_key_length(evp_cipher_x()));
-			const std::string the_iv = produce::key(EVP_CIPHER_iv_length(evp_cipher_x()));
+			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
+			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
 
 			constexpr cipher_stateful_t() noexcept = default;
 			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
@@ -200,6 +214,22 @@ namespace mr_crypt
 
 	namespace encrypt
 	{
+		using des_ede = details::enc_adapter<EVP_des_ede>;
+		using des_ede_ecb = details::enc_adapter<EVP_des_ede_ecb>;
+		using des_ede_cbc = details::enc_adapter<EVP_des_ede_cbc>;
+		using des_ede_ofb = details::enc_adapter<EVP_des_ede_ofb>;
+		using des_ede_cfb64 = details::enc_adapter<EVP_des_ede_cfb64>;
+		using des_ede_cfb = des_ede_cfb64;
+
+		using des_ede3 = details::enc_adapter<EVP_des_ede3>;
+		using des_ede3_ecb = details::enc_adapter<EVP_des_ede3_ecb>;
+		using des_ede3_cbc = details::enc_adapter<EVP_des_ede3_cbc>;
+		using des_ede3_ofb = details::enc_adapter<EVP_des_ede3_ofb>;
+		using des_ede3_cfb1 = details::enc_adapter<EVP_des_ede3_cfb1>;
+		using des_ede3_cfb8 = details::enc_adapter<EVP_des_ede3_cfb8>;
+		using des_ede3_cfb64 = details::enc_adapter<EVP_des_ede3_cfb64>;
+		using des_ede3_cfb = des_ede3_cfb64;
+
 		using aes_128_ecb = details::enc_adapter<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::enc_adapter<EVP_aes_128_cbc>;
 		using aes_128_ofb = details::enc_adapter<EVP_aes_128_ofb>;
@@ -294,6 +324,22 @@ namespace mr_crypt
 
 	namespace decrypt
 	{
+		using des_ede = details::dec_adapter<EVP_des_ede>;
+		using des_ede_ecb = details::dec_adapter<EVP_des_ede_ecb>;
+		using des_ede_cbc = details::dec_adapter<EVP_des_ede_cbc>;
+		using des_ede_ofb = details::dec_adapter<EVP_des_ede_ofb>;
+		using des_ede_cfb64 = details::dec_adapter<EVP_des_ede_cfb64>;
+		using des_ede_cfb = des_ede_cfb64;
+
+		using des_ede3 = details::dec_adapter<EVP_des_ede3>;
+		using des_ede3_ecb = details::dec_adapter<EVP_des_ede3_ecb>;
+		using des_ede3_cbc = details::dec_adapter<EVP_des_ede3_cbc>;
+		using des_ede3_ofb = details::dec_adapter<EVP_des_ede3_ofb>;
+		using des_ede3_cfb1 = details::dec_adapter<EVP_des_ede3_cfb1>;
+		using des_ede3_cfb8 = details::dec_adapter<EVP_des_ede3_cfb8>;
+		using des_ede3_cfb64 = details::dec_adapter<EVP_des_ede3_cfb64>;
+		using des_ede3_cfb = des_ede3_cfb64;
+
 		using aes_128_ecb = details::dec_adapter<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::dec_adapter<EVP_aes_128_cbc>;
 		using aes_128_ofb = details::dec_adapter<EVP_aes_128_ofb>;
@@ -388,6 +434,22 @@ namespace mr_crypt
 
 	namespace majesty
 	{
+		using des_ede = details::cipher_stateful_t<EVP_des_ede>;
+		using des_ede_ecb = details::cipher_stateful_t<EVP_des_ede_ecb>;
+		using des_ede_cbc = details::cipher_stateful_t<EVP_des_ede_cbc>;
+		using des_ede_ofb = details::cipher_stateful_t<EVP_des_ede_ofb>;
+		using des_ede_cfb64 = details::cipher_stateful_t<EVP_des_ede_cfb64>;
+		using des_ede_cfb = des_ede_cfb64;
+
+		using des_ede3 = details::cipher_stateful_t<EVP_des_ede3>;
+		using des_ede3_ecb = details::cipher_stateful_t<EVP_des_ede3_ecb>;
+		using des_ede3_cbc = details::cipher_stateful_t<EVP_des_ede3_cbc>;
+		using des_ede3_ofb = details::cipher_stateful_t<EVP_des_ede3_ofb>;
+		using des_ede3_cfb1 = details::cipher_stateful_t<EVP_des_ede3_cfb1>;
+		using des_ede3_cfb8 = details::cipher_stateful_t<EVP_des_ede3_cfb8>;
+		using des_ede3_cfb64 = details::cipher_stateful_t<EVP_des_ede3_cfb64>;
+		using des_ede3_cfb = des_ede3_cfb64;
+
 		using aes_128_ecb = details::cipher_stateful_t<EVP_aes_128_ecb>;
 		using aes_128_cbc = details::cipher_stateful_t<EVP_aes_128_cbc>;
 		using aes_128_ofb = details::cipher_stateful_t<EVP_aes_128_ofb>;
