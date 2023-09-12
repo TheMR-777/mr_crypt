@@ -179,19 +179,9 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
 			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : my_key{ key }, the_iv{ iv } {}
 
-			auto encrypt_fn(view_t input) const noexcept
-			{
-				return input | encrypt;
-			}
-
-			auto decrypt_fn(view_t input) const noexcept
-			{
-				return input | decrypt;
-			}
-
 			auto operator()(view_t input) const noexcept
 			{
-				return encrypt_fn(input);
+				return encrypt(input);
 			}
 		};
 
