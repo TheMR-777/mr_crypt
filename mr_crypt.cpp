@@ -127,7 +127,7 @@ namespace mr_crypt
 			return output;
 		}
 
-		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt>
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true, bool requires_tag = false>
 		auto cipher(view_t input, view_t key, view_t iv = {}) noexcept
 		{
 			auto mode_c = evp_cipher_x();
@@ -149,7 +149,7 @@ namespace mr_crypt
 			return output;
 		}
 
-		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt>
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true>
 		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt>>, info_provider<evp_cipher_x>
 		{
 			view_t my_key, my_iv;
@@ -161,7 +161,7 @@ namespace mr_crypt
 		};
 
 		template <const EVP_CIPHER* (*evp_cipher_x)()>
-		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true>;
+		using enc_adapter = cipher_adapter_wrap<evp_cipher_x>;
 
 		template <const EVP_CIPHER* (*evp_cipher_x)()>
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false>;
@@ -169,22 +169,30 @@ namespace mr_crypt
 		template <const EVP_CIPHER* (*evp_cipher_x)()>
 		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>, info_provider<evp_cipher_x>
 		{
-			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
-			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
+			const std::string my_key;
+			const std::string the_iv;
 
-			constexpr cipher_stateful_t() noexcept = default;
-			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
-			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : my_key{ key }, the_iv{ iv } {}
-
-			auto encrypt() const noexcept
+			struct
 			{
-				return enc_adapter<evp_cipher_x>{ my_key, the_iv };
-			}
+				enc_adapter<evp_cipher_x> encrypt;
+				dec_adapter<evp_cipher_x> decrypt;
+			} adapter;
 
-			auto decrypt() const noexcept
-			{
-				return dec_adapter<evp_cipher_x>{ my_key, the_iv };
-			}
+			constexpr cipher_stateful_t() noexcept : 
+				my_key{ produce::key(info_provider<evp_cipher_x>::key_size()) }, 
+				the_iv{ produce::key(info_provider<evp_cipher_x>::iv_size()) },
+				adapter{ { my_key, the_iv }, { my_key, the_iv } }
+			{}
+			constexpr cipher_stateful_t(view_t key) noexcept : 
+				my_key{ key }, 
+				the_iv{},
+				adapter{ { my_key, the_iv }, { my_key, the_iv } }
+			{}
+			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : 
+				my_key{ key }, 
+				the_iv{ iv },
+				adapter{ { my_key, the_iv }, { my_key, the_iv } }
+			{}
 
 			auto encrypt(view_t input) const noexcept
 			{
