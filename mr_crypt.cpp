@@ -130,8 +130,11 @@ namespace mr_crypt
 		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true, bool requires_tag = false>
 		auto cipher(view_t input, view_t key, view_t iv = {}) noexcept
 		{
+			constexpr auto tag_length = requires_tag
+				? to_encrypt ? 16 : -16
+				: 0;
 			auto mode_c = evp_cipher_x();
-			auto output = std::string(cipher_final_size(input.size(), EVP_CIPHER_block_size(mode_c)), '\0');
+			auto output = std::string(cipher_final_size(input.size(), EVP_CIPHER_block_size(mode_c)) + tag_length, '\0');
 			auto it_out = reinterpret_cast<byte_t*>(output.data());
 			auto size_i = int{};
 			auto size_f = int{};
@@ -142,38 +145,40 @@ namespace mr_crypt
 
 				auto state = EVP_CIPHER_CTX_new();
 				init(state, mode_c, reinterpret_cast<const byte_t*>(key.data()), reinterpret_cast<const byte_t*>(iv.data()));
-				ping(state, it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size());
+				ping(state, it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size() + (requires_tag && to_encrypt) * tag_length);
+				if constexpr (requires_tag && !to_encrypt) EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_SET_TAG, 16, (view_t::value_type*)input.data() + input.size() + tag_length);
 				ends(state, it_out + size_i, &size_f);
+				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_GET_TAG, 16, it_out + size_i + size_f);
 				EVP_CIPHER_CTX_free(state);
 			}
 			return output;
 		}
 
-		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true>
-		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt>>, info_provider<evp_cipher_x>
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true, bool requires_tag = false>
+		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>, info_provider<evp_cipher_x>
 		{
 			view_t my_key, my_iv;
 			constexpr cipher_adapter_wrap(view_t key, view_t iv) noexcept : my_key{ key }, my_iv{ iv } {}
 			auto operator()(view_t input) const noexcept
 			{
-				return cipher<evp_cipher_x, to_encrypt>(input, my_key, my_iv);
+				return cipher<evp_cipher_x, to_encrypt, requires_tag>(input, my_key, my_iv);
 			}
 		};
 
-		template <const EVP_CIPHER* (*evp_cipher_x)()>
-		using enc_adapter = cipher_adapter_wrap<evp_cipher_x>;
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool requires_tag = false>
+		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true, requires_tag>;
 
-		template <const EVP_CIPHER* (*evp_cipher_x)()>
-		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false>;
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool requires_tag = false>
+		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
-		template <const EVP_CIPHER* (*evp_cipher_x)()>
+		template <const EVP_CIPHER* (*evp_cipher_x)(), bool requires_tag = false>
 		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>, info_provider<evp_cipher_x>
 		{
 			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
 			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
 
-			enc_adapter<evp_cipher_x> encrypt = { my_key, the_iv };
-			dec_adapter<evp_cipher_x> decrypt = { my_key, the_iv };
+			enc_adapter<evp_cipher_x, requires_tag> encrypt = { my_key, the_iv };
+			dec_adapter<evp_cipher_x, requires_tag> decrypt = { my_key, the_iv };
 
 			constexpr cipher_stateful_t() noexcept = default;
 			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
@@ -221,6 +226,7 @@ namespace mr_crypt
 		using aes_128_cfb8 = details::enc_adapter<EVP_aes_128_cfb8>;
 		using aes_128_cfb128 = details::enc_adapter<EVP_aes_128_cfb128>;
 		using aes_128_cfb = aes_128_cfb128;
+		using aes_128_gcm = details::enc_adapter<EVP_aes_128_gcm, true>;
 
 		using aes_192_ecb = details::enc_adapter<EVP_aes_192_ecb>;
 		using aes_192_cbc = details::enc_adapter<EVP_aes_192_cbc>;
@@ -230,6 +236,7 @@ namespace mr_crypt
 		using aes_192_cfb8 = details::enc_adapter<EVP_aes_192_cfb8>;
 		using aes_192_cfb128 = details::enc_adapter<EVP_aes_192_cfb128>;
 		using aes_192_cfb = aes_192_cfb128;
+		using aes_192_gcm = details::enc_adapter<EVP_aes_192_gcm, true>;
 
 		using aes_256_ecb = details::enc_adapter<EVP_aes_256_ecb>;
 		using aes_256_cbc = details::enc_adapter<EVP_aes_256_cbc>;
@@ -239,6 +246,7 @@ namespace mr_crypt
 		using aes_256_cfb8 = details::enc_adapter<EVP_aes_256_cfb8>;
 		using aes_256_cfb128 = details::enc_adapter<EVP_aes_256_cfb128>;
 		using aes_256_cfb = aes_256_cfb128;
+		using aes_256_gcm = details::enc_adapter<EVP_aes_256_gcm, true>;
 
 		using aria_128_ecb = details::enc_adapter<EVP_aria_128_ecb>;
 		using aria_128_cbc = details::enc_adapter<EVP_aria_128_cbc>;
@@ -248,6 +256,7 @@ namespace mr_crypt
 		using aria_128_cfb8 = details::enc_adapter<EVP_aria_128_cfb8>;
 		using aria_128_cfb128 = details::enc_adapter<EVP_aria_128_cfb128>;
 		using aria_128_cfb = aria_128_cfb128;
+		using aria_128_gcm = details::enc_adapter<EVP_aria_128_gcm, true>;
 
 		using aria_192_ecb = details::enc_adapter<EVP_aria_192_ecb>;
 		using aria_192_cbc = details::enc_adapter<EVP_aria_192_cbc>;
@@ -257,6 +266,7 @@ namespace mr_crypt
 		using aria_192_cfb8 = details::enc_adapter<EVP_aria_192_cfb8>;
 		using aria_192_cfb128 = details::enc_adapter<EVP_aria_192_cfb128>;
 		using aria_192_cfb = aria_192_cfb128;
+		using aria_192_gcm = details::enc_adapter<EVP_aria_192_gcm, true>;
 
 		using aria_256_ecb = details::enc_adapter<EVP_aria_256_ecb>;
 		using aria_256_cbc = details::enc_adapter<EVP_aria_256_cbc>;
@@ -266,6 +276,7 @@ namespace mr_crypt
 		using aria_256_cfb8 = details::enc_adapter<EVP_aria_256_cfb8>;
 		using aria_256_cfb128 = details::enc_adapter<EVP_aria_256_cfb128>;
 		using aria_256_cfb = aria_256_cfb128;
+		using aria_256_gcm = details::enc_adapter<EVP_aria_256_gcm, true>;
 
 		using camellia_128_ecb = details::enc_adapter<EVP_camellia_128_ecb>;
 		using camellia_128_cbc = details::enc_adapter<EVP_camellia_128_cbc>;
@@ -331,6 +342,7 @@ namespace mr_crypt
 		using aes_128_cfb8 = details::dec_adapter<EVP_aes_128_cfb8>;
 		using aes_128_cfb128 = details::dec_adapter<EVP_aes_128_cfb128>;
 		using aes_128_cfb = aes_128_cfb128;
+		using aes_128_gcm = details::dec_adapter<EVP_aes_128_gcm, true>;
 
 		using aes_192_ecb = details::dec_adapter<EVP_aes_192_ecb>;
 		using aes_192_cbc = details::dec_adapter<EVP_aes_192_cbc>;
@@ -340,6 +352,7 @@ namespace mr_crypt
 		using aes_192_cfb8 = details::dec_adapter<EVP_aes_192_cfb8>;
 		using aes_192_cfb128 = details::dec_adapter<EVP_aes_192_cfb128>;
 		using aes_192_cfb = aes_192_cfb128;
+		using aes_192_gcm = details::dec_adapter<EVP_aes_192_gcm, true>;
 
 		using aes_256_ecb = details::dec_adapter<EVP_aes_256_ecb>;
 		using aes_256_cbc = details::dec_adapter<EVP_aes_256_cbc>;
@@ -349,6 +362,7 @@ namespace mr_crypt
 		using aes_256_cfb8 = details::dec_adapter<EVP_aes_256_cfb8>;
 		using aes_256_cfb128 = details::dec_adapter<EVP_aes_256_cfb128>;
 		using aes_256_cfb = aes_256_cfb128;
+		using aes_256_gcm = details::dec_adapter<EVP_aes_256_gcm, true>;
 
 		using aria_128_ecb = details::dec_adapter<EVP_aria_128_ecb>;
 		using aria_128_cbc = details::dec_adapter<EVP_aria_128_cbc>;
@@ -358,6 +372,7 @@ namespace mr_crypt
 		using aria_128_cfb8 = details::dec_adapter<EVP_aria_128_cfb8>;
 		using aria_128_cfb128 = details::dec_adapter<EVP_aria_128_cfb128>;
 		using aria_128_cfb = aria_128_cfb128;
+		using aria_128_gcm = details::dec_adapter<EVP_aria_128_gcm, true>;
 
 		using aria_192_ecb = details::dec_adapter<EVP_aria_192_ecb>;
 		using aria_192_cbc = details::dec_adapter<EVP_aria_192_cbc>;
@@ -367,6 +382,7 @@ namespace mr_crypt
 		using aria_192_cfb8 = details::dec_adapter<EVP_aria_192_cfb8>;
 		using aria_192_cfb128 = details::dec_adapter<EVP_aria_192_cfb128>;
 		using aria_192_cfb = aria_192_cfb128;
+		using aria_192_gcm = details::dec_adapter<EVP_aria_192_gcm, true>;
 
 		using aria_256_ecb = details::dec_adapter<EVP_aria_256_ecb>;
 		using aria_256_cbc = details::dec_adapter<EVP_aria_256_cbc>;
@@ -376,6 +392,7 @@ namespace mr_crypt
 		using aria_256_cfb8 = details::dec_adapter<EVP_aria_256_cfb8>;
 		using aria_256_cfb128 = details::dec_adapter<EVP_aria_256_cfb128>;
 		using aria_256_cfb = aria_256_cfb128;
+		using aria_256_gcm = details::dec_adapter<EVP_aria_256_gcm, true>;
 
 		using camellia_128_ecb = details::dec_adapter<EVP_camellia_128_ecb>;
 		using camellia_128_cbc = details::dec_adapter<EVP_camellia_128_cbc>;
@@ -441,6 +458,7 @@ namespace mr_crypt
 		using aes_128_cfb8 = details::cipher_stateful_t<EVP_aes_128_cfb8>;
 		using aes_128_cfb128 = details::cipher_stateful_t<EVP_aes_128_cfb128>;
 		using aes_128_cfb = aes_128_cfb128;
+		using aes_128_gcm = details::cipher_stateful_t<EVP_aes_128_gcm, true>;
 
 		using aes_192_ecb = details::cipher_stateful_t<EVP_aes_192_ecb>;
 		using aes_192_cbc = details::cipher_stateful_t<EVP_aes_192_cbc>;
@@ -450,6 +468,7 @@ namespace mr_crypt
 		using aes_192_cfb8 = details::cipher_stateful_t<EVP_aes_192_cfb8>;
 		using aes_192_cfb128 = details::cipher_stateful_t<EVP_aes_192_cfb128>;
 		using aes_192_cfb = aes_192_cfb128;
+		using aes_192_gcm = details::cipher_stateful_t<EVP_aes_192_gcm, true>;
 
 		using aes_256_ecb = details::cipher_stateful_t<EVP_aes_256_ecb>;
 		using aes_256_cbc = details::cipher_stateful_t<EVP_aes_256_cbc>;
@@ -459,6 +478,7 @@ namespace mr_crypt
 		using aes_256_cfb8 = details::cipher_stateful_t<EVP_aes_256_cfb8>;
 		using aes_256_cfb128 = details::cipher_stateful_t<EVP_aes_256_cfb128>;
 		using aes_256_cfb = aes_256_cfb128;
+		using aes_256_gcm = details::cipher_stateful_t<EVP_aes_256_gcm, true>;
 
 		using aria_128_ecb = details::cipher_stateful_t<EVP_aria_128_ecb>;
 		using aria_128_cbc = details::cipher_stateful_t<EVP_aria_128_cbc>;
@@ -468,6 +488,7 @@ namespace mr_crypt
 		using aria_128_cfb8 = details::cipher_stateful_t<EVP_aria_128_cfb8>;
 		using aria_128_cfb128 = details::cipher_stateful_t<EVP_aria_128_cfb128>;
 		using aria_128_cfb = aria_128_cfb128;
+		using aria_128_gcm = details::cipher_stateful_t<EVP_aria_128_gcm, true>;
 
 		using aria_192_ecb = details::cipher_stateful_t<EVP_aria_192_ecb>;
 		using aria_192_cbc = details::cipher_stateful_t<EVP_aria_192_cbc>;
@@ -477,6 +498,7 @@ namespace mr_crypt
 		using aria_192_cfb8 = details::cipher_stateful_t<EVP_aria_192_cfb8>;
 		using aria_192_cfb128 = details::cipher_stateful_t<EVP_aria_192_cfb128>;
 		using aria_192_cfb = aria_192_cfb128;
+		using aria_192_gcm = details::cipher_stateful_t<EVP_aria_192_gcm, true>;
 
 		using aria_256_ecb = details::cipher_stateful_t<EVP_aria_256_ecb>;
 		using aria_256_cbc = details::cipher_stateful_t<EVP_aria_256_cbc>;
@@ -486,6 +508,7 @@ namespace mr_crypt
 		using aria_256_cfb8 = details::cipher_stateful_t<EVP_aria_256_cfb8>;
 		using aria_256_cfb128 = details::cipher_stateful_t<EVP_aria_256_cfb128>;
 		using aria_256_cfb = aria_256_cfb128;
+		using aria_256_gcm = details::cipher_stateful_t<EVP_aria_256_gcm, true>;
 
 		using camellia_128_ecb = details::cipher_stateful_t<EVP_camellia_128_ecb>;
 		using camellia_128_cbc = details::cipher_stateful_t<EVP_camellia_128_cbc>;
