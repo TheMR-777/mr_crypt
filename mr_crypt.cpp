@@ -136,8 +136,7 @@ namespace mr_crypt
 			auto mode_c = evp_cipher_x();
 			auto output = std::string(cipher_final_size(input.size(), EVP_CIPHER_block_size(mode_c)) + tag_length, '\0');
 			auto it_out = reinterpret_cast<byte_t*>(output.data());
-			auto size_i = int{};
-			auto size_f = int{};
+			auto size_i = int{}, size_f = int{};
 			{
 				constexpr auto init = to_encrypt ? EVP_EncryptInit : EVP_DecryptInit;
 				constexpr auto ping = to_encrypt ? EVP_EncryptUpdate : EVP_DecryptUpdate;
@@ -145,10 +144,10 @@ namespace mr_crypt
 
 				auto state = EVP_CIPHER_CTX_new();
 				init(state, mode_c, reinterpret_cast<const byte_t*>(key.data()), reinterpret_cast<const byte_t*>(iv.data()));
-				ping(state, it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size() + (requires_tag && to_encrypt) * tag_length);
-				if constexpr (requires_tag && !to_encrypt) EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_SET_TAG, 16, (view_t::value_type*)input.data() + input.size() + tag_length);
+				ping(state, it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size() + (requires_tag && !to_encrypt) * tag_length);
+				if constexpr (requires_tag && !to_encrypt) EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_SET_TAG, -tag_length, (view_t::value_type*)input.data() + input.size() + tag_length);
 				ends(state, it_out + size_i, &size_f);
-				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_GET_TAG, 16, it_out + size_i + size_f);
+				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_GET_TAG, tag_length, it_out + size_i + size_f);
 				EVP_CIPHER_CTX_free(state);
 			}
 			return output;
