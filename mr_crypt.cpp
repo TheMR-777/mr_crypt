@@ -176,8 +176,8 @@ namespace mr_crypt
 			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
 			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
 
-			enc_adapter<evp_cipher_x, requires_tag> encrypt = { my_key, the_iv };
-			dec_adapter<evp_cipher_x, requires_tag> decrypt = { my_key, the_iv };
+			const enc_adapter<evp_cipher_x, requires_tag> encrypt = { my_key, the_iv };
+			const dec_adapter<evp_cipher_x, requires_tag> decrypt = { my_key, the_iv };
 
 			constexpr cipher_stateful_t() noexcept = default;
 			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
