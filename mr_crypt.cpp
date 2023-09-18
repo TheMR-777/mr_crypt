@@ -24,7 +24,7 @@ namespace mr_crypt
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
 		}
 
-		auto random_bytes_rsa(const size_t bits_n)
+		auto random_bytes_rsa(const size_t bits_n) noexcept
 		{
 			auto key_loc = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>(nullptr, EVP_PKEY_free);
 			{
