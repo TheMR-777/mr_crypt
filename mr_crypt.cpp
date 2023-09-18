@@ -24,6 +24,31 @@ namespace mr_crypt
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
 		}
 
+		auto random_bytes_rsa(const size_t bits_n)
+		{
+			auto key_loc = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>(nullptr, EVP_PKEY_free);
+			{
+				auto key_ctx = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), &EVP_PKEY_CTX_free);
+				EVP_PKEY_keygen_init(key_ctx.get());
+				EVP_PKEY_CTX_set_rsa_keygen_bits(key_ctx.get(), bits_n);
+				EVP_PKEY_generate(key_ctx.get(), std::out_ptr(key_loc));
+			}
+
+			auto keys = std::pair
+			{
+				std::string(i2d_PrivateKey(key_loc.get(), nullptr), '\0'),
+				std::string(i2d_PUBKEY(key_loc.get(), nullptr), '\0'),
+			};
+
+			auto pvt_buf = reinterpret_cast<mr_crypt::byte_t*>(keys.first.data());
+			auto pub_buf = reinterpret_cast<mr_crypt::byte_t*>(keys.second.data());
+
+			i2d_PrivateKey(key_loc.get(), &pvt_buf);
+			i2d_PUBKEY(key_loc.get(), &pub_buf);
+
+			return keys;
+		}
+
 		auto guid() noexcept
 		{
 			return random_bytes(16);
@@ -142,13 +167,12 @@ namespace mr_crypt
 				constexpr auto ping = to_encrypt ? EVP_EncryptUpdate : EVP_DecryptUpdate;
 				constexpr auto ends = to_encrypt ? EVP_EncryptFinal : EVP_DecryptFinal;
 
-				auto state = EVP_CIPHER_CTX_new();
-				init(state, mode_c, reinterpret_cast<const byte_t*>(key.data()), reinterpret_cast<const byte_t*>(iv.data()));
-				ping(state, it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size() + (requires_tag && !to_encrypt) * tag_length);
-				if constexpr (requires_tag && !to_encrypt) EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_SET_TAG, -tag_length, (view_t::value_type*)input.data() + input.size() + tag_length);
-				ends(state, it_out + size_i, &size_f);
-				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state, EVP_CTRL_AEAD_GET_TAG, tag_length, it_out + size_i + size_f);
-				EVP_CIPHER_CTX_free(state);
+				auto state = std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)>{ EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free };
+				init(state.get(), mode_c, reinterpret_cast<const byte_t*>(key.data()), reinterpret_cast<const byte_t*>(iv.data()));
+				ping(state.get(), it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size() + (requires_tag && !to_encrypt) * tag_length);
+				if constexpr (requires_tag && !to_encrypt) EVP_CIPHER_CTX_ctrl(state.get(), EVP_CTRL_AEAD_SET_TAG, -tag_length, (view_t::value_type*)input.data() + input.size() + tag_length);
+				ends(state.get(), it_out + size_i, &size_f);
+				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state.get(), EVP_CTRL_AEAD_GET_TAG, tag_length, it_out + size_i + size_f);
 			}
 			return output;
 		}
