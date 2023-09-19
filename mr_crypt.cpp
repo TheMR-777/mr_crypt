@@ -204,7 +204,7 @@ namespace mr_crypt
 			const dec_adapter<evp_cipher_x, requires_tag> decrypt = { my_key, the_iv };
 
 			constexpr cipher_stateful_t() noexcept = default;
-			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key }, the_iv{} {}
+			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key } {}
 			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : my_key{ key }, the_iv{ iv } {}
 
 			auto operator()(view_t input) const noexcept
