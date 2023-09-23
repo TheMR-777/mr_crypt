@@ -1,8 +1,8 @@
 #include <range/v3/view.hpp>
 #include <openssl/evp.h>
+#include <openssl/pem.h>
 #include <random>
 #include <ranges>
-#include <print>
 
 namespace mr_crypt
 {
@@ -138,6 +138,12 @@ namespace mr_crypt
 			}
 		};
 
+		template <const auto* (*evp_x)()>
+		struct expose_t
+		{
+			static constexpr auto underlying_f = evp_x;
+		};
+
 		constexpr auto cipher_final_size(const size_t in_size, const int block_size) noexcept
 		{
 			return ((in_size + block_size - 1) / block_size) * block_size;
@@ -152,8 +158,20 @@ namespace mr_crypt
 			return output;
 		}
 
+		template <const EVP_MD* (*evp_x)()>
+		struct hash_adapter_wrap : std::ranges::range_adaptor_closure<hash_adapter_wrap<evp_x>>, expose_t<evp_x>
+		{
+			auto operator()(view_t input) const noexcept
+			{
+				return hash<evp_x>(input);
+			}
+		};
+
+		template <const EVP_MD* (*evp_x)()>
+		static constexpr auto hash_adapter = hash_adapter_wrap<evp_x>{};
+
 		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true, bool requires_tag = false>
-		auto cipher(view_t input, view_t key, view_t iv = {}) noexcept
+		auto cipher(view_t input, view_t key, view_t iv) noexcept
 		{
 			constexpr auto tag_length = requires_tag
 				? to_encrypt ? 16 : -16
@@ -178,10 +196,10 @@ namespace mr_crypt
 		}
 
 		template <const EVP_CIPHER* (*evp_cipher_x)(), bool to_encrypt = true, bool requires_tag = false>
-		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>, info_provider<evp_cipher_x>
+		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>, info_provider<evp_cipher_x>, expose_t<evp_cipher_x>
 		{
 			view_t my_key, my_iv;
-			constexpr cipher_adapter_wrap(view_t key, view_t iv) noexcept : my_key{ key }, my_iv{ iv } {}
+			constexpr cipher_adapter_wrap(view_t key, view_t iv = {}) noexcept : my_key{ key }, my_iv{ iv } {}
 			auto operator()(view_t input) const noexcept
 			{
 				return cipher<evp_cipher_x, to_encrypt, requires_tag>(input, my_key, my_iv);
@@ -195,7 +213,7 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
 		template <const EVP_CIPHER* (*evp_cipher_x)(), bool requires_tag = false>
-		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>, info_provider<evp_cipher_x>
+		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>, info_provider<evp_cipher_x>, expose_t<evp_cipher_x>
 		{
 			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
 			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
@@ -212,9 +230,6 @@ namespace mr_crypt
 				return encrypt(input);
 			}
 		};
-
-		template <const EVP_MD* (*evp_x)()>
-		static constexpr auto hash_adapter = adapter_base_f<hash<evp_x>>{};
 	}
 
 	namespace convert
