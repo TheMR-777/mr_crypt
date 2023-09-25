@@ -223,7 +223,7 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x>>, info_provider<evp_cipher_x>
+		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, requires_tag>>, info_provider<evp_cipher_x>
 		{
 			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
 			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
