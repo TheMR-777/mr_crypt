@@ -603,6 +603,17 @@ namespace mr_crypt
 		constexpr auto sha3_384 = details::hash_adapter<EVP_sha3_384>;
 		constexpr auto sha3_512 = details::hash_adapter<EVP_sha3_512>;
 	}
+
+	namespace pk_cs_5
+	{
+		template <const EVP_MD* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
+		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = 10'000) -> std::string
+		{
+			std::string out(keylen, '\0');
+			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), keylen, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
+			return out;
+		}
+	}
 }
 
 int main()
