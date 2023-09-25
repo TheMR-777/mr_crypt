@@ -236,10 +236,10 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : my_key{ key }, the_iv{ iv } {}
 
 			template <hash_f_t evp_x = hashing::sha_256.underlying_f>
-			static auto with_password(view_t password, view_t salt = {}) noexcept
+			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 10'000) noexcept
 			{
-				auto new_key = pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt);
-				auto new_iv = pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt);
+				auto new_key = pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations);
+				auto new_iv = pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations);
 				return cipher_stateful_t<evp_cipher_x, requires_tag>{ new_key, new_iv };
 			}
 
