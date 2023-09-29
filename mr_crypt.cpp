@@ -216,7 +216,7 @@ namespace mr_crypt
 		}
 
 		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false, class D = void>
-		struct cipher_adapter_wrap : 
+		struct cipher_adapter_wrap :
 			std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<D>, cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>, D>>,
 			info_provider<evp_cipher_x>
 		{
@@ -237,8 +237,7 @@ namespace mr_crypt
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
 		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, requires_tag>>, info_provider<evp_cipher_x>
 		{
-			const std::string my_key = produce::key(info_provider<evp_cipher_x>::key_size());
-			const std::string the_iv = produce::key(info_provider<evp_cipher_x>::iv_size());
+			const std::string my_key = make_key(), the_iv = make_iv();
 
 			const enc_adapter<evp_cipher_x, requires_tag> encrypt = { my_key, the_iv };
 			const dec_adapter<evp_cipher_x, requires_tag> decrypt = { my_key, the_iv };
