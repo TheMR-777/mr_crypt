@@ -158,6 +158,16 @@ namespace mr_crypt
 			{
 				return EVP_CIPHER_iv_length(evp_cipher_x());
 			}
+
+			static auto make_key() noexcept
+			{
+				return produce::random_bytes(key_size());
+			}
+
+			static auto make_iv() noexcept
+			{
+				return produce::random_bytes(iv_size());
+			}
 		};
 
 		template <hash_f_t evp_x>
