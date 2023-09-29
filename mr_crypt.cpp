@@ -237,10 +237,13 @@ namespace mr_crypt
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
 		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, requires_tag>>, info_provider<evp_cipher_x>
 		{
+			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
+			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
+
 			const std::string my_key = make_key(), the_iv = make_iv();
 
-			const enc_adapter<evp_cipher_x, requires_tag> encrypt = { my_key, the_iv };
-			const dec_adapter<evp_cipher_x, requires_tag> decrypt = { my_key, the_iv };
+			const encrypt_t encrypt = { my_key, the_iv };
+			const decrypt_t decrypt = { my_key, the_iv };
 
 			constexpr cipher_stateful_t() noexcept = default;
 			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key } {}
@@ -249,9 +252,11 @@ namespace mr_crypt
 			template <hash_f_t evp_x = hashing::sha_256.underlying_f>
 			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 10'000) noexcept
 			{
-				auto new_key = pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations);
-				auto new_iv = pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations);
-				return cipher_stateful_t<evp_cipher_x, requires_tag>{ new_key, new_iv };
+				return cipher_stateful_t<evp_cipher_x, requires_tag>
+				{
+					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations),
+					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations)
+				};
 			}
 
 			auto operator()(view_t input) const noexcept
@@ -265,238 +270,6 @@ namespace mr_crypt
 	{
 		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
 		constexpr auto to_hex = details::adapter_base_f<details::convert::to_hex>{};
-	}
-
-	namespace encrypt
-	{
-		using des_ede = details::enc_adapter<EVP_des_ede>;
-		using des_ede_ecb = details::enc_adapter<EVP_des_ede_ecb>;
-		using des_ede_cbc = details::enc_adapter<EVP_des_ede_cbc>;
-		using des_ede_ofb = details::enc_adapter<EVP_des_ede_ofb>;
-		using des_ede_cfb64 = details::enc_adapter<EVP_des_ede_cfb64>;
-		using des_ede_cfb = des_ede_cfb64;
-
-		using des_ede3 = details::enc_adapter<EVP_des_ede3>;
-		using des_ede3_ecb = details::enc_adapter<EVP_des_ede3_ecb>;
-		using des_ede3_cbc = details::enc_adapter<EVP_des_ede3_cbc>;
-		using des_ede3_ofb = details::enc_adapter<EVP_des_ede3_ofb>;
-		using des_ede3_cfb1 = details::enc_adapter<EVP_des_ede3_cfb1>;
-		using des_ede3_cfb8 = details::enc_adapter<EVP_des_ede3_cfb8>;
-		using des_ede3_cfb64 = details::enc_adapter<EVP_des_ede3_cfb64>;
-		using des_ede3_cfb = des_ede3_cfb64;
-
-		using aes_128_ecb = details::enc_adapter<EVP_aes_128_ecb>;
-		using aes_128_cbc = details::enc_adapter<EVP_aes_128_cbc>;
-		using aes_128_ofb = details::enc_adapter<EVP_aes_128_ofb>;
-		using aes_128_ctr = details::enc_adapter<EVP_aes_128_ctr>;
-		using aes_128_cfb1 = details::enc_adapter<EVP_aes_128_cfb1>;
-		using aes_128_cfb8 = details::enc_adapter<EVP_aes_128_cfb8>;
-		using aes_128_cfb128 = details::enc_adapter<EVP_aes_128_cfb128>;
-		using aes_128_cfb = aes_128_cfb128;
-		using aes_128_gcm = details::enc_adapter<EVP_aes_128_gcm, true>;
-
-		using aes_192_ecb = details::enc_adapter<EVP_aes_192_ecb>;
-		using aes_192_cbc = details::enc_adapter<EVP_aes_192_cbc>;
-		using aes_192_ofb = details::enc_adapter<EVP_aes_192_ofb>;
-		using aes_192_ctr = details::enc_adapter<EVP_aes_192_ctr>;
-		using aes_192_cfb1 = details::enc_adapter<EVP_aes_192_cfb1>;
-		using aes_192_cfb8 = details::enc_adapter<EVP_aes_192_cfb8>;
-		using aes_192_cfb128 = details::enc_adapter<EVP_aes_192_cfb128>;
-		using aes_192_cfb = aes_192_cfb128;
-		using aes_192_gcm = details::enc_adapter<EVP_aes_192_gcm, true>;
-
-		using aes_256_ecb = details::enc_adapter<EVP_aes_256_ecb>;
-		using aes_256_cbc = details::enc_adapter<EVP_aes_256_cbc>;
-		using aes_256_ofb = details::enc_adapter<EVP_aes_256_ofb>;
-		using aes_256_ctr = details::enc_adapter<EVP_aes_256_ctr>;
-		using aes_256_cfb1 = details::enc_adapter<EVP_aes_256_cfb1>;
-		using aes_256_cfb8 = details::enc_adapter<EVP_aes_256_cfb8>;
-		using aes_256_cfb128 = details::enc_adapter<EVP_aes_256_cfb128>;
-		using aes_256_cfb = aes_256_cfb128;
-		using aes_256_gcm = details::enc_adapter<EVP_aes_256_gcm, true>;
-
-		using aria_128_ecb = details::enc_adapter<EVP_aria_128_ecb>;
-		using aria_128_cbc = details::enc_adapter<EVP_aria_128_cbc>;
-		using aria_128_ofb = details::enc_adapter<EVP_aria_128_ofb>;
-		using aria_128_ctr = details::enc_adapter<EVP_aria_128_ctr>;
-		using aria_128_cfb1 = details::enc_adapter<EVP_aria_128_cfb1>;
-		using aria_128_cfb8 = details::enc_adapter<EVP_aria_128_cfb8>;
-		using aria_128_cfb128 = details::enc_adapter<EVP_aria_128_cfb128>;
-		using aria_128_cfb = aria_128_cfb128;
-		using aria_128_gcm = details::enc_adapter<EVP_aria_128_gcm, true>;
-
-		using aria_192_ecb = details::enc_adapter<EVP_aria_192_ecb>;
-		using aria_192_cbc = details::enc_adapter<EVP_aria_192_cbc>;
-		using aria_192_ofb = details::enc_adapter<EVP_aria_192_ofb>;
-		using aria_192_ctr = details::enc_adapter<EVP_aria_192_ctr>;
-		using aria_192_cfb1 = details::enc_adapter<EVP_aria_192_cfb1>;
-		using aria_192_cfb8 = details::enc_adapter<EVP_aria_192_cfb8>;
-		using aria_192_cfb128 = details::enc_adapter<EVP_aria_192_cfb128>;
-		using aria_192_cfb = aria_192_cfb128;
-		using aria_192_gcm = details::enc_adapter<EVP_aria_192_gcm, true>;
-
-		using aria_256_ecb = details::enc_adapter<EVP_aria_256_ecb>;
-		using aria_256_cbc = details::enc_adapter<EVP_aria_256_cbc>;
-		using aria_256_ofb = details::enc_adapter<EVP_aria_256_ofb>;
-		using aria_256_ctr = details::enc_adapter<EVP_aria_256_ctr>;
-		using aria_256_cfb1 = details::enc_adapter<EVP_aria_256_cfb1>;
-		using aria_256_cfb8 = details::enc_adapter<EVP_aria_256_cfb8>;
-		using aria_256_cfb128 = details::enc_adapter<EVP_aria_256_cfb128>;
-		using aria_256_cfb = aria_256_cfb128;
-		using aria_256_gcm = details::enc_adapter<EVP_aria_256_gcm, true>;
-
-		using camellia_128_ecb = details::enc_adapter<EVP_camellia_128_ecb>;
-		using camellia_128_cbc = details::enc_adapter<EVP_camellia_128_cbc>;
-		using camellia_128_ofb = details::enc_adapter<EVP_camellia_128_ofb>;
-		using camellia_128_ctr = details::enc_adapter<EVP_camellia_128_ctr>;
-		using camellia_128_cfb1 = details::enc_adapter<EVP_camellia_128_cfb1>;
-		using camellia_128_cfb8 = details::enc_adapter<EVP_camellia_128_cfb8>;
-		using camellia_128_cfb128 = details::enc_adapter<EVP_camellia_128_cfb128>;
-		using camellia_128_cfb = camellia_128_cfb128;
-
-		using camellia_192_ecb = details::enc_adapter<EVP_camellia_192_ecb>;
-		using camellia_192_cbc = details::enc_adapter<EVP_camellia_192_cbc>;
-		using camellia_192_ofb = details::enc_adapter<EVP_camellia_192_ofb>;
-		using camellia_192_ctr = details::enc_adapter<EVP_camellia_192_ctr>;
-		using camellia_192_cfb1 = details::enc_adapter<EVP_camellia_192_cfb1>;
-		using camellia_192_cfb8 = details::enc_adapter<EVP_camellia_192_cfb8>;
-		using camellia_192_cfb128 = details::enc_adapter<EVP_camellia_192_cfb128>;
-		using camellia_192_cfb = camellia_192_cfb128;
-
-		using camellia_256_ecb = details::enc_adapter<EVP_camellia_256_ecb>;
-		using camellia_256_cbc = details::enc_adapter<EVP_camellia_256_cbc>;
-		using camellia_256_ofb = details::enc_adapter<EVP_camellia_256_ofb>;
-		using camellia_256_ctr = details::enc_adapter<EVP_camellia_256_ctr>;
-		using camellia_256_cfb1 = details::enc_adapter<EVP_camellia_256_cfb1>;
-		using camellia_256_cfb8 = details::enc_adapter<EVP_camellia_256_cfb8>;
-		using camellia_256_cfb128 = details::enc_adapter<EVP_camellia_256_cfb128>;
-		using camellia_256_cfb = camellia_256_cfb128;
-
-		using sm4_ecb = details::enc_adapter<EVP_sm4_ecb>;
-		using sm4_cbc = details::enc_adapter<EVP_sm4_cbc>;
-		using sm4_ofb = details::enc_adapter<EVP_sm4_ofb>;
-		using sm4_ctr = details::enc_adapter<EVP_sm4_ctr>;
-		using sm4_cfb = details::enc_adapter<EVP_sm4_cfb>;
-		using sm4_cfb128 = details::enc_adapter<EVP_sm4_cfb128>;
-
-		using chacha_20 = details::enc_adapter<EVP_chacha20>;
-		using chacha_20_poly_1305 = details::enc_adapter<EVP_chacha20_poly1305>;
-	}
-
-	namespace decrypt
-	{
-		using des_ede = details::dec_adapter<EVP_des_ede>;
-		using des_ede_ecb = details::dec_adapter<EVP_des_ede_ecb>;
-		using des_ede_cbc = details::dec_adapter<EVP_des_ede_cbc>;
-		using des_ede_ofb = details::dec_adapter<EVP_des_ede_ofb>;
-		using des_ede_cfb64 = details::dec_adapter<EVP_des_ede_cfb64>;
-		using des_ede_cfb = des_ede_cfb64;
-
-		using des_ede3 = details::dec_adapter<EVP_des_ede3>;
-		using des_ede3_ecb = details::dec_adapter<EVP_des_ede3_ecb>;
-		using des_ede3_cbc = details::dec_adapter<EVP_des_ede3_cbc>;
-		using des_ede3_ofb = details::dec_adapter<EVP_des_ede3_ofb>;
-		using des_ede3_cfb1 = details::dec_adapter<EVP_des_ede3_cfb1>;
-		using des_ede3_cfb8 = details::dec_adapter<EVP_des_ede3_cfb8>;
-		using des_ede3_cfb64 = details::dec_adapter<EVP_des_ede3_cfb64>;
-		using des_ede3_cfb = des_ede3_cfb64;
-
-		using aes_128_ecb = details::dec_adapter<EVP_aes_128_ecb>;
-		using aes_128_cbc = details::dec_adapter<EVP_aes_128_cbc>;
-		using aes_128_ofb = details::dec_adapter<EVP_aes_128_ofb>;
-		using aes_128_ctr = details::dec_adapter<EVP_aes_128_ctr>;
-		using aes_128_cfb1 = details::dec_adapter<EVP_aes_128_cfb1>;
-		using aes_128_cfb8 = details::dec_adapter<EVP_aes_128_cfb8>;
-		using aes_128_cfb128 = details::dec_adapter<EVP_aes_128_cfb128>;
-		using aes_128_cfb = aes_128_cfb128;
-		using aes_128_gcm = details::dec_adapter<EVP_aes_128_gcm, true>;
-
-		using aes_192_ecb = details::dec_adapter<EVP_aes_192_ecb>;
-		using aes_192_cbc = details::dec_adapter<EVP_aes_192_cbc>;
-		using aes_192_ofb = details::dec_adapter<EVP_aes_192_ofb>;
-		using aes_192_ctr = details::dec_adapter<EVP_aes_192_ctr>;
-		using aes_192_cfb1 = details::dec_adapter<EVP_aes_192_cfb1>;
-		using aes_192_cfb8 = details::dec_adapter<EVP_aes_192_cfb8>;
-		using aes_192_cfb128 = details::dec_adapter<EVP_aes_192_cfb128>;
-		using aes_192_cfb = aes_192_cfb128;
-		using aes_192_gcm = details::dec_adapter<EVP_aes_192_gcm, true>;
-
-		using aes_256_ecb = details::dec_adapter<EVP_aes_256_ecb>;
-		using aes_256_cbc = details::dec_adapter<EVP_aes_256_cbc>;
-		using aes_256_ofb = details::dec_adapter<EVP_aes_256_ofb>;
-		using aes_256_ctr = details::dec_adapter<EVP_aes_256_ctr>;
-		using aes_256_cfb1 = details::dec_adapter<EVP_aes_256_cfb1>;
-		using aes_256_cfb8 = details::dec_adapter<EVP_aes_256_cfb8>;
-		using aes_256_cfb128 = details::dec_adapter<EVP_aes_256_cfb128>;
-		using aes_256_cfb = aes_256_cfb128;
-		using aes_256_gcm = details::dec_adapter<EVP_aes_256_gcm, true>;
-
-		using aria_128_ecb = details::dec_adapter<EVP_aria_128_ecb>;
-		using aria_128_cbc = details::dec_adapter<EVP_aria_128_cbc>;
-		using aria_128_ofb = details::dec_adapter<EVP_aria_128_ofb>;
-		using aria_128_ctr = details::dec_adapter<EVP_aria_128_ctr>;
-		using aria_128_cfb1 = details::dec_adapter<EVP_aria_128_cfb1>;
-		using aria_128_cfb8 = details::dec_adapter<EVP_aria_128_cfb8>;
-		using aria_128_cfb128 = details::dec_adapter<EVP_aria_128_cfb128>;
-		using aria_128_cfb = aria_128_cfb128;
-		using aria_128_gcm = details::dec_adapter<EVP_aria_128_gcm, true>;
-
-		using aria_192_ecb = details::dec_adapter<EVP_aria_192_ecb>;
-		using aria_192_cbc = details::dec_adapter<EVP_aria_192_cbc>;
-		using aria_192_ofb = details::dec_adapter<EVP_aria_192_ofb>;
-		using aria_192_ctr = details::dec_adapter<EVP_aria_192_ctr>;
-		using aria_192_cfb1 = details::dec_adapter<EVP_aria_192_cfb1>;
-		using aria_192_cfb8 = details::dec_adapter<EVP_aria_192_cfb8>;
-		using aria_192_cfb128 = details::dec_adapter<EVP_aria_192_cfb128>;
-		using aria_192_cfb = aria_192_cfb128;
-		using aria_192_gcm = details::dec_adapter<EVP_aria_192_gcm, true>;
-
-		using aria_256_ecb = details::dec_adapter<EVP_aria_256_ecb>;
-		using aria_256_cbc = details::dec_adapter<EVP_aria_256_cbc>;
-		using aria_256_ofb = details::dec_adapter<EVP_aria_256_ofb>;
-		using aria_256_ctr = details::dec_adapter<EVP_aria_256_ctr>;
-		using aria_256_cfb1 = details::dec_adapter<EVP_aria_256_cfb1>;
-		using aria_256_cfb8 = details::dec_adapter<EVP_aria_256_cfb8>;
-		using aria_256_cfb128 = details::dec_adapter<EVP_aria_256_cfb128>;
-		using aria_256_cfb = aria_256_cfb128;
-		using aria_256_gcm = details::dec_adapter<EVP_aria_256_gcm, true>;
-
-		using camellia_128_ecb = details::dec_adapter<EVP_camellia_128_ecb>;
-		using camellia_128_cbc = details::dec_adapter<EVP_camellia_128_cbc>;
-		using camellia_128_ofb = details::dec_adapter<EVP_camellia_128_ofb>;
-		using camellia_128_ctr = details::dec_adapter<EVP_camellia_128_ctr>;
-		using camellia_128_cfb1 = details::dec_adapter<EVP_camellia_128_cfb1>;
-		using camellia_128_cfb8 = details::dec_adapter<EVP_camellia_128_cfb8>;
-		using camellia_128_cfb128 = details::dec_adapter<EVP_camellia_128_cfb128>;
-		using camellia_128_cfb = camellia_128_cfb128;
-
-		using camellia_192_ecb = details::dec_adapter<EVP_camellia_192_ecb>;
-		using camellia_192_cbc = details::dec_adapter<EVP_camellia_192_cbc>;
-		using camellia_192_ofb = details::dec_adapter<EVP_camellia_192_ofb>;
-		using camellia_192_ctr = details::dec_adapter<EVP_camellia_192_ctr>;
-		using camellia_192_cfb1 = details::dec_adapter<EVP_camellia_192_cfb1>;
-		using camellia_192_cfb8 = details::dec_adapter<EVP_camellia_192_cfb8>;
-		using camellia_192_cfb128 = details::dec_adapter<EVP_camellia_192_cfb128>;
-		using camellia_192_cfb = camellia_192_cfb128;
-
-		using camellia_256_ecb = details::dec_adapter<EVP_camellia_256_ecb>;
-		using camellia_256_cbc = details::dec_adapter<EVP_camellia_256_cbc>;
-		using camellia_256_ofb = details::dec_adapter<EVP_camellia_256_ofb>;
-		using camellia_256_ctr = details::dec_adapter<EVP_camellia_256_ctr>;
-		using camellia_256_cfb1 = details::dec_adapter<EVP_camellia_256_cfb1>;
-		using camellia_256_cfb8 = details::dec_adapter<EVP_camellia_256_cfb8>;
-		using camellia_256_cfb128 = details::dec_adapter<EVP_camellia_256_cfb128>;
-		using camellia_256_cfb = camellia_256_cfb128;
-
-		using sm4_ecb = details::dec_adapter<EVP_sm4_ecb>;
-		using sm4_cbc = details::dec_adapter<EVP_sm4_cbc>;
-		using sm4_ofb = details::dec_adapter<EVP_sm4_ofb>;
-		using sm4_ctr = details::dec_adapter<EVP_sm4_ctr>;
-		using sm4_cfb = details::dec_adapter<EVP_sm4_cfb>;
-		using sm4_cfb128 = details::dec_adapter<EVP_sm4_cfb128>;
-
-		using chacha_20 = details::dec_adapter<EVP_chacha20>;
-		using chacha_20_poly_1305 = details::dec_adapter<EVP_chacha20_poly1305>;
 	}
 
 	namespace supreme
