@@ -205,8 +205,10 @@ namespace mr_crypt
 			return output;
 		}
 
-		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false>
-		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>, info_provider<evp_cipher_x>
+		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false, class D = void>
+		struct cipher_adapter_wrap : 
+			std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<D>, cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>, D>>,
+			info_provider<evp_cipher_x>
 		{
 			view_t my_key, my_iv;
 			constexpr cipher_adapter_wrap(view_t key, view_t iv = {}) noexcept : my_key{ key }, my_iv{ iv } {}
@@ -216,11 +218,11 @@ namespace mr_crypt
 			}
 		};
 
-		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true, requires_tag>;
+		template <ciph_f_t evp_cipher_x, bool requires_tag = false, class D = void>
+		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true, requires_tag, D>;
 
-		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
+		template <ciph_f_t evp_cipher_x, bool requires_tag = false, class D = void>
+		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag, D>;
 
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
 		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, requires_tag>>, info_provider<evp_cipher_x>
@@ -488,7 +490,7 @@ namespace mr_crypt
 		using chacha_20_poly_1305 = details::dec_adapter<EVP_chacha20_poly1305>;
 	}
 
-	namespace majesty
+	namespace supreme
 	{
 		using des_ede = details::cipher_stateful_t<EVP_des_ede>;
 		using des_ede_ecb = details::cipher_stateful_t<EVP_des_ede_ecb>;
