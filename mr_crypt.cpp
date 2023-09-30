@@ -60,7 +60,7 @@ namespace mr_crypt
 	namespace pk_cs_5
 	{
 		template <const EVP_MD* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
-		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = 10'000) -> std::string
+		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = 1'000) -> std::string
 		{
 			std::string out(keylen, '\0');
 			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), keylen, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
@@ -215,10 +215,11 @@ namespace mr_crypt
 			return output;
 		}
 
-		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false, class D = void>
-		struct cipher_adapter_wrap :
-			std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<D>, cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>, D>>,
-			info_provider<evp_cipher_x>
+		template <ciph_f_t evp_cipher_x, class D>
+		struct cipher_base_f : std::ranges::range_adaptor_closure<D>, info_provider<evp_cipher_x> {};
+
+		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false>
+		struct cipher_adapter_wrap : cipher_base_f<evp_cipher_x, cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>
 		{
 			view_t my_key, my_iv;
 			constexpr cipher_adapter_wrap(view_t key, view_t iv = {}) noexcept : my_key{ key }, my_iv{ iv } {}
@@ -228,29 +229,30 @@ namespace mr_crypt
 			}
 		};
 
-		template <ciph_f_t evp_cipher_x, bool requires_tag = false, class D = void>
-		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true, requires_tag, D>;
-
-		template <ciph_f_t evp_cipher_x, bool requires_tag = false, class D = void>
-		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag, D>;
+		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
+		using enc_adapter = cipher_adapter_wrap<evp_cipher_x, true, requires_tag>;
 
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, requires_tag>>, info_provider<evp_cipher_x>
+		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
+
+		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
+		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag>>
 		{
+			using info = info_provider<evp_cipher_x>;
+			using str_buf_t = const std::string&;
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
 			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
 
-			const std::string my_key = make_key(), the_iv = make_iv();
+			str_buf_t my_key = info::make_key(), the_iv = info::make_iv(); 
 
 			const encrypt_t encrypt = { my_key, the_iv };
 			const decrypt_t decrypt = { my_key, the_iv };
 
 			constexpr cipher_stateful_t() noexcept = default;
-			constexpr cipher_stateful_t(view_t key) noexcept : my_key{ key } {}
-			constexpr cipher_stateful_t(view_t key, view_t iv) noexcept : my_key{ key }, the_iv{ iv } {}
+			constexpr cipher_stateful_t(str_buf_t key, str_buf_t iv = {}) noexcept : my_key{ key }, the_iv{ iv } {}
 
 			template <hash_f_t evp_x = hashing::sha_256.underlying_f>
-			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 10'000) noexcept
+			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 1'000) noexcept
 			{
 				return cipher_stateful_t<evp_cipher_x, requires_tag>
 				{
