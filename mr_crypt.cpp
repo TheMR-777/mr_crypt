@@ -236,10 +236,11 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag>>
+		class cipher_stateful_t : public cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag>>
 		{
 			using info = info_provider<evp_cipher_x>;
 			using str_buf_t = const std::string&;
+		public:
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
 			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
 
@@ -251,13 +252,13 @@ namespace mr_crypt
 			constexpr cipher_stateful_t() noexcept = default;
 			constexpr cipher_stateful_t(str_buf_t key, str_buf_t iv = {}) noexcept : my_key{ key }, the_iv{ iv } {}
 
-			template <hash_f_t evp_x = hashing::sha_256.underlying_f>
+			template <bool include_iv = true, hash_f_t evp_x = hashing::sha_256.underlying_f>
 			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 1'000) noexcept
 			{
 				return cipher_stateful_t<evp_cipher_x, requires_tag>
 				{
 					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations),
-					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations)
+					include_iv ? pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations) : str_buf_t{}
 				};
 			}
 
