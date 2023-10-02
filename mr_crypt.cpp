@@ -11,6 +11,16 @@ namespace mr_crypt
 	using byte_t = std::uint8_t;
 	using view_t = std::string_view;
 
+	namespace
+	{
+#define DECLARE_CIPHER(NAME, FUNC, ...) \
+    template <bool ownership = true> \
+    using NAME = details::cipher_stateful_t<FUNC, ownership, ##__VA_ARGS__>;
+
+#define DECLARE_CIPHER_EX(NAME, ...) \
+    DECLARE_CIPHER(NAME, EVP_##NAME, ##__VA_ARGS__)
+	}
+
 	namespace produce
 	{
 		auto random_byte() noexcept -> byte_t
@@ -235,7 +245,7 @@ namespace mr_crypt
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
-		template <ciph_f_t evp_cipher_x, bool requires_tag = false, bool ownership = true>
+		template <ciph_f_t evp_cipher_x, bool ownership = true, bool requires_tag = false>
 		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag, ownership>>
 		{
 			using container_t = std::conditional_t<ownership, std::string, view_t>;
@@ -275,118 +285,118 @@ namespace mr_crypt
 
 	namespace supreme
 	{
-		using des_ede = details::cipher_stateful_t<EVP_des_ede>;
-		using des_ede_ecb = details::cipher_stateful_t<EVP_des_ede_ecb>;
-		using des_ede_cbc = details::cipher_stateful_t<EVP_des_ede_cbc>;
-		using des_ede_ofb = details::cipher_stateful_t<EVP_des_ede_ofb>;
-		using des_ede_cfb64 = details::cipher_stateful_t<EVP_des_ede_cfb64>;
-		using des_ede_cfb = des_ede_cfb64;
+		DECLARE_CIPHER_EX(des_ede);
+		DECLARE_CIPHER_EX(des_ede_ecb);
+		DECLARE_CIPHER_EX(des_ede_cbc);
+		DECLARE_CIPHER_EX(des_ede_ofb);
+		DECLARE_CIPHER_EX(des_ede_cfb);
+		DECLARE_CIPHER_EX(des_ede_cfb64);
 
-		using des_ede3 = details::cipher_stateful_t<EVP_des_ede3>;
-		using des_ede3_ecb = details::cipher_stateful_t<EVP_des_ede3_ecb>;
-		using des_ede3_cbc = details::cipher_stateful_t<EVP_des_ede3_cbc>;
-		using des_ede3_ofb = details::cipher_stateful_t<EVP_des_ede3_ofb>;
-		using des_ede3_cfb1 = details::cipher_stateful_t<EVP_des_ede3_cfb1>;
-		using des_ede3_cfb8 = details::cipher_stateful_t<EVP_des_ede3_cfb8>;
-		using des_ede3_cfb64 = details::cipher_stateful_t<EVP_des_ede3_cfb64>;
-		using des_ede3_cfb = des_ede3_cfb64;
+		DECLARE_CIPHER_EX(des_ede3);
+		DECLARE_CIPHER_EX(des_ede3_ecb);
+		DECLARE_CIPHER_EX(des_ede3_cbc);
+		DECLARE_CIPHER_EX(des_ede3_ofb);
+		DECLARE_CIPHER_EX(des_ede3_cfb);
+		DECLARE_CIPHER_EX(des_ede3_cfb1);
+		DECLARE_CIPHER_EX(des_ede3_cfb8);
+		DECLARE_CIPHER_EX(des_ede3_cfb64);
 
-		using aes_128_ecb = details::cipher_stateful_t<EVP_aes_128_ecb>;
-		using aes_128_cbc = details::cipher_stateful_t<EVP_aes_128_cbc>;
-		using aes_128_ofb = details::cipher_stateful_t<EVP_aes_128_ofb>;
-		using aes_128_ctr = details::cipher_stateful_t<EVP_aes_128_ctr>;
-		using aes_128_cfb1 = details::cipher_stateful_t<EVP_aes_128_cfb1>;
-		using aes_128_cfb8 = details::cipher_stateful_t<EVP_aes_128_cfb8>;
-		using aes_128_cfb128 = details::cipher_stateful_t<EVP_aes_128_cfb128>;
-		using aes_128_cfb = aes_128_cfb128;
-		using aes_128_gcm = details::cipher_stateful_t<EVP_aes_128_gcm, true>;
+		DECLARE_CIPHER_EX(aes_128_ecb);
+		DECLARE_CIPHER_EX(aes_128_cbc);
+		DECLARE_CIPHER_EX(aes_128_ofb);
+		DECLARE_CIPHER_EX(aes_128_ctr);
+		DECLARE_CIPHER_EX(aes_128_cfb);
+		DECLARE_CIPHER_EX(aes_128_cfb1);
+		DECLARE_CIPHER_EX(aes_128_cfb8);
+		DECLARE_CIPHER_EX(aes_128_cfb128);
+		DECLARE_CIPHER_EX(aes_128_gcm, true);
 
-		using aes_192_ecb = details::cipher_stateful_t<EVP_aes_192_ecb>;
-		using aes_192_cbc = details::cipher_stateful_t<EVP_aes_192_cbc>;
-		using aes_192_ofb = details::cipher_stateful_t<EVP_aes_192_ofb>;
-		using aes_192_ctr = details::cipher_stateful_t<EVP_aes_192_ctr>;
-		using aes_192_cfb1 = details::cipher_stateful_t<EVP_aes_192_cfb1>;
-		using aes_192_cfb8 = details::cipher_stateful_t<EVP_aes_192_cfb8>;
-		using aes_192_cfb128 = details::cipher_stateful_t<EVP_aes_192_cfb128>;
-		using aes_192_cfb = aes_192_cfb128;
-		using aes_192_gcm = details::cipher_stateful_t<EVP_aes_192_gcm, true>;
+		DECLARE_CIPHER_EX(aes_192_ecb);
+		DECLARE_CIPHER_EX(aes_192_cbc);
+		DECLARE_CIPHER_EX(aes_192_ofb);
+		DECLARE_CIPHER_EX(aes_192_ctr);
+		DECLARE_CIPHER_EX(aes_192_cfb);
+		DECLARE_CIPHER_EX(aes_192_cfb1);
+		DECLARE_CIPHER_EX(aes_192_cfb8);
+		DECLARE_CIPHER_EX(aes_192_cfb128);
+		DECLARE_CIPHER_EX(aes_192_gcm, true);
 
-		using aes_256_ecb = details::cipher_stateful_t<EVP_aes_256_ecb>;
-		using aes_256_cbc = details::cipher_stateful_t<EVP_aes_256_cbc>;
-		using aes_256_ofb = details::cipher_stateful_t<EVP_aes_256_ofb>;
-		using aes_256_ctr = details::cipher_stateful_t<EVP_aes_256_ctr>;
-		using aes_256_cfb1 = details::cipher_stateful_t<EVP_aes_256_cfb1>;
-		using aes_256_cfb8 = details::cipher_stateful_t<EVP_aes_256_cfb8>;
-		using aes_256_cfb128 = details::cipher_stateful_t<EVP_aes_256_cfb128>;
-		using aes_256_cfb = aes_256_cfb128;
-		using aes_256_gcm = details::cipher_stateful_t<EVP_aes_256_gcm, true>;
+		DECLARE_CIPHER_EX(aes_256_ecb);
+		DECLARE_CIPHER_EX(aes_256_cbc);
+		DECLARE_CIPHER_EX(aes_256_ofb);
+		DECLARE_CIPHER_EX(aes_256_ctr);
+		DECLARE_CIPHER_EX(aes_256_cfb);
+		DECLARE_CIPHER_EX(aes_256_cfb1);
+		DECLARE_CIPHER_EX(aes_256_cfb8);
+		DECLARE_CIPHER_EX(aes_256_cfb128);
+		DECLARE_CIPHER_EX(aes_256_gcm, true);
 
-		using aria_128_ecb = details::cipher_stateful_t<EVP_aria_128_ecb>;
-		using aria_128_cbc = details::cipher_stateful_t<EVP_aria_128_cbc>;
-		using aria_128_ofb = details::cipher_stateful_t<EVP_aria_128_ofb>;
-		using aria_128_ctr = details::cipher_stateful_t<EVP_aria_128_ctr>;
-		using aria_128_cfb1 = details::cipher_stateful_t<EVP_aria_128_cfb1>;
-		using aria_128_cfb8 = details::cipher_stateful_t<EVP_aria_128_cfb8>;
-		using aria_128_cfb128 = details::cipher_stateful_t<EVP_aria_128_cfb128>;
-		using aria_128_cfb = aria_128_cfb128;
-		using aria_128_gcm = details::cipher_stateful_t<EVP_aria_128_gcm, true>;
+		DECLARE_CIPHER_EX(aria_128_ecb);
+		DECLARE_CIPHER_EX(aria_128_cbc);
+		DECLARE_CIPHER_EX(aria_128_ofb);
+		DECLARE_CIPHER_EX(aria_128_ctr);
+		DECLARE_CIPHER_EX(aria_128_cfb);
+		DECLARE_CIPHER_EX(aria_128_cfb1);
+		DECLARE_CIPHER_EX(aria_128_cfb8);
+		DECLARE_CIPHER_EX(aria_128_cfb128);
+		DECLARE_CIPHER_EX(aria_128_gcm, true);
 
-		using aria_192_ecb = details::cipher_stateful_t<EVP_aria_192_ecb>;
-		using aria_192_cbc = details::cipher_stateful_t<EVP_aria_192_cbc>;
-		using aria_192_ofb = details::cipher_stateful_t<EVP_aria_192_ofb>;
-		using aria_192_ctr = details::cipher_stateful_t<EVP_aria_192_ctr>;
-		using aria_192_cfb1 = details::cipher_stateful_t<EVP_aria_192_cfb1>;
-		using aria_192_cfb8 = details::cipher_stateful_t<EVP_aria_192_cfb8>;
-		using aria_192_cfb128 = details::cipher_stateful_t<EVP_aria_192_cfb128>;
-		using aria_192_cfb = aria_192_cfb128;
-		using aria_192_gcm = details::cipher_stateful_t<EVP_aria_192_gcm, true>;
+		DECLARE_CIPHER_EX(aria_192_ecb);
+		DECLARE_CIPHER_EX(aria_192_cbc);
+		DECLARE_CIPHER_EX(aria_192_ofb);
+		DECLARE_CIPHER_EX(aria_192_ctr);
+		DECLARE_CIPHER_EX(aria_192_cfb);
+		DECLARE_CIPHER_EX(aria_192_cfb1);
+		DECLARE_CIPHER_EX(aria_192_cfb8);
+		DECLARE_CIPHER_EX(aria_192_cfb128);
+		DECLARE_CIPHER_EX(aria_192_gcm, true);
 
-		using aria_256_ecb = details::cipher_stateful_t<EVP_aria_256_ecb>;
-		using aria_256_cbc = details::cipher_stateful_t<EVP_aria_256_cbc>;
-		using aria_256_ofb = details::cipher_stateful_t<EVP_aria_256_ofb>;
-		using aria_256_ctr = details::cipher_stateful_t<EVP_aria_256_ctr>;
-		using aria_256_cfb1 = details::cipher_stateful_t<EVP_aria_256_cfb1>;
-		using aria_256_cfb8 = details::cipher_stateful_t<EVP_aria_256_cfb8>;
-		using aria_256_cfb128 = details::cipher_stateful_t<EVP_aria_256_cfb128>;
-		using aria_256_cfb = aria_256_cfb128;
-		using aria_256_gcm = details::cipher_stateful_t<EVP_aria_256_gcm, true>;
+		DECLARE_CIPHER_EX(aria_256_ecb);
+		DECLARE_CIPHER_EX(aria_256_cbc);
+		DECLARE_CIPHER_EX(aria_256_ofb);
+		DECLARE_CIPHER_EX(aria_256_ctr);
+		DECLARE_CIPHER_EX(aria_256_cfb);
+		DECLARE_CIPHER_EX(aria_256_cfb1);
+		DECLARE_CIPHER_EX(aria_256_cfb8);
+		DECLARE_CIPHER_EX(aria_256_cfb128);
+		DECLARE_CIPHER_EX(aria_256_gcm, true);
 
-		using camellia_128_ecb = details::cipher_stateful_t<EVP_camellia_128_ecb>;
-		using camellia_128_cbc = details::cipher_stateful_t<EVP_camellia_128_cbc>;
-		using camellia_128_ofb = details::cipher_stateful_t<EVP_camellia_128_ofb>;
-		using camellia_128_ctr = details::cipher_stateful_t<EVP_camellia_128_ctr>;
-		using camellia_128_cfb1 = details::cipher_stateful_t<EVP_camellia_128_cfb1>;
-		using camellia_128_cfb8 = details::cipher_stateful_t<EVP_camellia_128_cfb8>;
-		using camellia_128_cfb128 = details::cipher_stateful_t<EVP_camellia_128_cfb128>;
-		using camellia_128_cfb = camellia_128_cfb128;
+		DECLARE_CIPHER_EX(camellia_128_ecb);
+		DECLARE_CIPHER_EX(camellia_128_cbc);
+		DECLARE_CIPHER_EX(camellia_128_ofb);
+		DECLARE_CIPHER_EX(camellia_128_ctr);
+		DECLARE_CIPHER_EX(camellia_128_cfb);
+		DECLARE_CIPHER_EX(camellia_128_cfb1);
+		DECLARE_CIPHER_EX(camellia_128_cfb8);
+		DECLARE_CIPHER_EX(camellia_128_cfb128);
 
-		using camellia_192_ecb = details::cipher_stateful_t<EVP_camellia_192_ecb>;
-		using camellia_192_cbc = details::cipher_stateful_t<EVP_camellia_192_cbc>;
-		using camellia_192_ofb = details::cipher_stateful_t<EVP_camellia_192_ofb>;
-		using camellia_192_ctr = details::cipher_stateful_t<EVP_camellia_192_ctr>;
-		using camellia_192_cfb1 = details::cipher_stateful_t<EVP_camellia_192_cfb1>;
-		using camellia_192_cfb8 = details::cipher_stateful_t<EVP_camellia_192_cfb8>;
-		using camellia_192_cfb128 = details::cipher_stateful_t<EVP_camellia_192_cfb128>;
-		using camellia_192_cfb = camellia_192_cfb128;
+		DECLARE_CIPHER_EX(camellia_192_ecb);
+		DECLARE_CIPHER_EX(camellia_192_cbc);
+		DECLARE_CIPHER_EX(camellia_192_ofb);
+		DECLARE_CIPHER_EX(camellia_192_ctr);
+		DECLARE_CIPHER_EX(camellia_192_cfb);
+		DECLARE_CIPHER_EX(camellia_192_cfb1);
+		DECLARE_CIPHER_EX(camellia_192_cfb8);
+		DECLARE_CIPHER_EX(camellia_192_cfb128);
 
-		using camellia_256_ecb = details::cipher_stateful_t<EVP_camellia_256_ecb>;
-		using camellia_256_cbc = details::cipher_stateful_t<EVP_camellia_256_cbc>;
-		using camellia_256_ofb = details::cipher_stateful_t<EVP_camellia_256_ofb>;
-		using camellia_256_ctr = details::cipher_stateful_t<EVP_camellia_256_ctr>;
-		using camellia_256_cfb1 = details::cipher_stateful_t<EVP_camellia_256_cfb1>;
-		using camellia_256_cfb8 = details::cipher_stateful_t<EVP_camellia_256_cfb8>;
-		using camellia_256_cfb128 = details::cipher_stateful_t<EVP_camellia_256_cfb128>;
-		using camellia_256_cfb = camellia_256_cfb128;
+		DECLARE_CIPHER_EX(camellia_256_ecb);
+		DECLARE_CIPHER_EX(camellia_256_cbc);
+		DECLARE_CIPHER_EX(camellia_256_ofb);
+		DECLARE_CIPHER_EX(camellia_256_ctr);
+		DECLARE_CIPHER_EX(camellia_256_cfb);
+		DECLARE_CIPHER_EX(camellia_256_cfb1);
+		DECLARE_CIPHER_EX(camellia_256_cfb8);
+		DECLARE_CIPHER_EX(camellia_256_cfb128);
 
-		using sm4_ecb = details::cipher_stateful_t<EVP_sm4_ecb>;
-		using sm4_cbc = details::cipher_stateful_t<EVP_sm4_cbc>;
-		using sm4_ofb = details::cipher_stateful_t<EVP_sm4_ofb>;
-		using sm4_ctr = details::cipher_stateful_t<EVP_sm4_ctr>;
-		using sm4_cfb = details::cipher_stateful_t<EVP_sm4_cfb>;
-		using sm4_cfb128 = details::cipher_stateful_t<EVP_sm4_cfb128>;
+		DECLARE_CIPHER_EX(sm4_ecb);
+		DECLARE_CIPHER_EX(sm4_cbc);
+		DECLARE_CIPHER_EX(sm4_ofb);
+		DECLARE_CIPHER_EX(sm4_ctr);
+		DECLARE_CIPHER_EX(sm4_cfb);
+		DECLARE_CIPHER_EX(sm4_cfb128);
 
-		using chacha_20 = details::cipher_stateful_t<EVP_chacha20>;
-		using chacha_20_poly_1305 = details::cipher_stateful_t<EVP_chacha20_poly1305>;
+		DECLARE_CIPHER(chacha_20, EVP_chacha20);
+		DECLARE_CIPHER(chacha_20_poly_1305, EVP_chacha20_poly1305);
 	}
 
 	namespace hashing
