@@ -235,10 +235,10 @@ namespace mr_crypt
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
-		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag>>
+		template <ciph_f_t evp_cipher_x, bool requires_tag = false, bool ownership = true>
+		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag, ownership>>
 		{
-			using container_t = std::string;
+			using container_t = std::conditional_t<ownership, std::string, view_t>;
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
 			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
 
@@ -247,10 +247,10 @@ namespace mr_crypt
 			const encrypt_t encrypt = { my_key, the_iv };
 			const decrypt_t decrypt = { my_key, the_iv };
 
-			constexpr cipher_stateful_t() noexcept = default;
+			constexpr cipher_stateful_t() noexcept requires ownership = default;
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
-			template <bool include_iv = true, hash_f_t evp_x = hashing::sha_256.underlying_f>
+			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
 			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 1'000) noexcept
 			{
 				return cipher_stateful_t<evp_cipher_x, requires_tag>
