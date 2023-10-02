@@ -236,18 +236,19 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
 		template <ciph_f_t evp_cipher_x, bool requires_tag = false>
-		struct cipher_stateful_t : public cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag>>
+		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag>>
 		{
+			using container_t = std::string;
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
 			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
 
-			const std::string my_key = info_provider<evp_cipher_x>::make_key(), the_iv = info_provider<evp_cipher_x>::make_iv();
+			const container_t my_key = info_provider<evp_cipher_x>::make_key(), the_iv = info_provider<evp_cipher_x>::make_iv();
 
 			const encrypt_t encrypt = { my_key, the_iv };
 			const decrypt_t decrypt = { my_key, the_iv };
 
 			constexpr cipher_stateful_t() noexcept = default;
-			constexpr cipher_stateful_t(view_t key, view_t iv = {}) noexcept : my_key{ key }, the_iv{ iv } {}
+			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
 			template <bool include_iv = true, hash_f_t evp_x = hashing::sha_256.underlying_f>
 			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 1'000) noexcept
@@ -255,7 +256,7 @@ namespace mr_crypt
 				return cipher_stateful_t<evp_cipher_x, requires_tag>
 				{
 					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations),
-					include_iv ? pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations) : std::string{}
+					include_iv ? pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations) : container_t{}
 				};
 			}
 
