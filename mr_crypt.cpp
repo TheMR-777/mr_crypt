@@ -13,12 +13,12 @@ namespace mr_crypt
 
 	namespace
 	{
-#define DECLARE_CIPHER(NAME, FUNC, ...) \
+#define DECLARE_CIPHER_EX(NAME, FUNC, ...) \
     template <bool ownership = true> \
     using NAME = details::cipher_stateful_t<FUNC, ownership, ##__VA_ARGS__>;
 
-#define DECLARE_CIPHER_EX(NAME, ...) \
-    DECLARE_CIPHER(NAME, EVP_##NAME, ##__VA_ARGS__)
+#define DECLARE_CIPHER(NAME, ...) \
+    DECLARE_CIPHER_EX(NAME, EVP_##NAME, ##__VA_ARGS__)
 	}
 
 	namespace produce
@@ -285,118 +285,118 @@ namespace mr_crypt
 
 	namespace supreme
 	{
-		DECLARE_CIPHER_EX(des_ede);
-		DECLARE_CIPHER_EX(des_ede_ecb);
-		DECLARE_CIPHER_EX(des_ede_cbc);
-		DECLARE_CIPHER_EX(des_ede_ofb);
-		DECLARE_CIPHER_EX(des_ede_cfb);
-		DECLARE_CIPHER_EX(des_ede_cfb64);
+		DECLARE_CIPHER(des_ede);
+		DECLARE_CIPHER(des_ede_ecb);
+		DECLARE_CIPHER(des_ede_cbc);
+		DECLARE_CIPHER(des_ede_ofb);
+		DECLARE_CIPHER(des_ede_cfb);
+		DECLARE_CIPHER(des_ede_cfb64);
 
-		DECLARE_CIPHER_EX(des_ede3);
-		DECLARE_CIPHER_EX(des_ede3_ecb);
-		DECLARE_CIPHER_EX(des_ede3_cbc);
-		DECLARE_CIPHER_EX(des_ede3_ofb);
-		DECLARE_CIPHER_EX(des_ede3_cfb);
-		DECLARE_CIPHER_EX(des_ede3_cfb1);
-		DECLARE_CIPHER_EX(des_ede3_cfb8);
-		DECLARE_CIPHER_EX(des_ede3_cfb64);
+		DECLARE_CIPHER(des_ede3);
+		DECLARE_CIPHER(des_ede3_ecb);
+		DECLARE_CIPHER(des_ede3_cbc);
+		DECLARE_CIPHER(des_ede3_ofb);
+		DECLARE_CIPHER(des_ede3_cfb);
+		DECLARE_CIPHER(des_ede3_cfb1);
+		DECLARE_CIPHER(des_ede3_cfb8);
+		DECLARE_CIPHER(des_ede3_cfb64);
 
-		DECLARE_CIPHER_EX(aes_128_ecb);
-		DECLARE_CIPHER_EX(aes_128_cbc);
-		DECLARE_CIPHER_EX(aes_128_ofb);
-		DECLARE_CIPHER_EX(aes_128_ctr);
-		DECLARE_CIPHER_EX(aes_128_cfb);
-		DECLARE_CIPHER_EX(aes_128_cfb1);
-		DECLARE_CIPHER_EX(aes_128_cfb8);
-		DECLARE_CIPHER_EX(aes_128_cfb128);
-		DECLARE_CIPHER_EX(aes_128_gcm, true);
+		DECLARE_CIPHER(aes_128_ecb);
+		DECLARE_CIPHER(aes_128_cbc);
+		DECLARE_CIPHER(aes_128_ofb);
+		DECLARE_CIPHER(aes_128_ctr);
+		DECLARE_CIPHER(aes_128_cfb);
+		DECLARE_CIPHER(aes_128_cfb1);
+		DECLARE_CIPHER(aes_128_cfb8);
+		DECLARE_CIPHER(aes_128_cfb128);
+		DECLARE_CIPHER(aes_128_gcm, true);
 
-		DECLARE_CIPHER_EX(aes_192_ecb);
-		DECLARE_CIPHER_EX(aes_192_cbc);
-		DECLARE_CIPHER_EX(aes_192_ofb);
-		DECLARE_CIPHER_EX(aes_192_ctr);
-		DECLARE_CIPHER_EX(aes_192_cfb);
-		DECLARE_CIPHER_EX(aes_192_cfb1);
-		DECLARE_CIPHER_EX(aes_192_cfb8);
-		DECLARE_CIPHER_EX(aes_192_cfb128);
-		DECLARE_CIPHER_EX(aes_192_gcm, true);
+		DECLARE_CIPHER(aes_192_ecb);
+		DECLARE_CIPHER(aes_192_cbc);
+		DECLARE_CIPHER(aes_192_ofb);
+		DECLARE_CIPHER(aes_192_ctr);
+		DECLARE_CIPHER(aes_192_cfb);
+		DECLARE_CIPHER(aes_192_cfb1);
+		DECLARE_CIPHER(aes_192_cfb8);
+		DECLARE_CIPHER(aes_192_cfb128);
+		DECLARE_CIPHER(aes_192_gcm, true);
 
-		DECLARE_CIPHER_EX(aes_256_ecb);
-		DECLARE_CIPHER_EX(aes_256_cbc);
-		DECLARE_CIPHER_EX(aes_256_ofb);
-		DECLARE_CIPHER_EX(aes_256_ctr);
-		DECLARE_CIPHER_EX(aes_256_cfb);
-		DECLARE_CIPHER_EX(aes_256_cfb1);
-		DECLARE_CIPHER_EX(aes_256_cfb8);
-		DECLARE_CIPHER_EX(aes_256_cfb128);
-		DECLARE_CIPHER_EX(aes_256_gcm, true);
+		DECLARE_CIPHER(aes_256_ecb);
+		DECLARE_CIPHER(aes_256_cbc);
+		DECLARE_CIPHER(aes_256_ofb);
+		DECLARE_CIPHER(aes_256_ctr);
+		DECLARE_CIPHER(aes_256_cfb);
+		DECLARE_CIPHER(aes_256_cfb1);
+		DECLARE_CIPHER(aes_256_cfb8);
+		DECLARE_CIPHER(aes_256_cfb128);
+		DECLARE_CIPHER(aes_256_gcm, true);
 
-		DECLARE_CIPHER_EX(aria_128_ecb);
-		DECLARE_CIPHER_EX(aria_128_cbc);
-		DECLARE_CIPHER_EX(aria_128_ofb);
-		DECLARE_CIPHER_EX(aria_128_ctr);
-		DECLARE_CIPHER_EX(aria_128_cfb);
-		DECLARE_CIPHER_EX(aria_128_cfb1);
-		DECLARE_CIPHER_EX(aria_128_cfb8);
-		DECLARE_CIPHER_EX(aria_128_cfb128);
-		DECLARE_CIPHER_EX(aria_128_gcm, true);
+		DECLARE_CIPHER(aria_128_ecb);
+		DECLARE_CIPHER(aria_128_cbc);
+		DECLARE_CIPHER(aria_128_ofb);
+		DECLARE_CIPHER(aria_128_ctr);
+		DECLARE_CIPHER(aria_128_cfb);
+		DECLARE_CIPHER(aria_128_cfb1);
+		DECLARE_CIPHER(aria_128_cfb8);
+		DECLARE_CIPHER(aria_128_cfb128);
+		DECLARE_CIPHER(aria_128_gcm, true);
 
-		DECLARE_CIPHER_EX(aria_192_ecb);
-		DECLARE_CIPHER_EX(aria_192_cbc);
-		DECLARE_CIPHER_EX(aria_192_ofb);
-		DECLARE_CIPHER_EX(aria_192_ctr);
-		DECLARE_CIPHER_EX(aria_192_cfb);
-		DECLARE_CIPHER_EX(aria_192_cfb1);
-		DECLARE_CIPHER_EX(aria_192_cfb8);
-		DECLARE_CIPHER_EX(aria_192_cfb128);
-		DECLARE_CIPHER_EX(aria_192_gcm, true);
+		DECLARE_CIPHER(aria_192_ecb);
+		DECLARE_CIPHER(aria_192_cbc);
+		DECLARE_CIPHER(aria_192_ofb);
+		DECLARE_CIPHER(aria_192_ctr);
+		DECLARE_CIPHER(aria_192_cfb);
+		DECLARE_CIPHER(aria_192_cfb1);
+		DECLARE_CIPHER(aria_192_cfb8);
+		DECLARE_CIPHER(aria_192_cfb128);
+		DECLARE_CIPHER(aria_192_gcm, true);
 
-		DECLARE_CIPHER_EX(aria_256_ecb);
-		DECLARE_CIPHER_EX(aria_256_cbc);
-		DECLARE_CIPHER_EX(aria_256_ofb);
-		DECLARE_CIPHER_EX(aria_256_ctr);
-		DECLARE_CIPHER_EX(aria_256_cfb);
-		DECLARE_CIPHER_EX(aria_256_cfb1);
-		DECLARE_CIPHER_EX(aria_256_cfb8);
-		DECLARE_CIPHER_EX(aria_256_cfb128);
-		DECLARE_CIPHER_EX(aria_256_gcm, true);
+		DECLARE_CIPHER(aria_256_ecb);
+		DECLARE_CIPHER(aria_256_cbc);
+		DECLARE_CIPHER(aria_256_ofb);
+		DECLARE_CIPHER(aria_256_ctr);
+		DECLARE_CIPHER(aria_256_cfb);
+		DECLARE_CIPHER(aria_256_cfb1);
+		DECLARE_CIPHER(aria_256_cfb8);
+		DECLARE_CIPHER(aria_256_cfb128);
+		DECLARE_CIPHER(aria_256_gcm, true);
 
-		DECLARE_CIPHER_EX(camellia_128_ecb);
-		DECLARE_CIPHER_EX(camellia_128_cbc);
-		DECLARE_CIPHER_EX(camellia_128_ofb);
-		DECLARE_CIPHER_EX(camellia_128_ctr);
-		DECLARE_CIPHER_EX(camellia_128_cfb);
-		DECLARE_CIPHER_EX(camellia_128_cfb1);
-		DECLARE_CIPHER_EX(camellia_128_cfb8);
-		DECLARE_CIPHER_EX(camellia_128_cfb128);
+		DECLARE_CIPHER(camellia_128_ecb);
+		DECLARE_CIPHER(camellia_128_cbc);
+		DECLARE_CIPHER(camellia_128_ofb);
+		DECLARE_CIPHER(camellia_128_ctr);
+		DECLARE_CIPHER(camellia_128_cfb);
+		DECLARE_CIPHER(camellia_128_cfb1);
+		DECLARE_CIPHER(camellia_128_cfb8);
+		DECLARE_CIPHER(camellia_128_cfb128);
 
-		DECLARE_CIPHER_EX(camellia_192_ecb);
-		DECLARE_CIPHER_EX(camellia_192_cbc);
-		DECLARE_CIPHER_EX(camellia_192_ofb);
-		DECLARE_CIPHER_EX(camellia_192_ctr);
-		DECLARE_CIPHER_EX(camellia_192_cfb);
-		DECLARE_CIPHER_EX(camellia_192_cfb1);
-		DECLARE_CIPHER_EX(camellia_192_cfb8);
-		DECLARE_CIPHER_EX(camellia_192_cfb128);
+		DECLARE_CIPHER(camellia_192_ecb);
+		DECLARE_CIPHER(camellia_192_cbc);
+		DECLARE_CIPHER(camellia_192_ofb);
+		DECLARE_CIPHER(camellia_192_ctr);
+		DECLARE_CIPHER(camellia_192_cfb);
+		DECLARE_CIPHER(camellia_192_cfb1);
+		DECLARE_CIPHER(camellia_192_cfb8);
+		DECLARE_CIPHER(camellia_192_cfb128);
 
-		DECLARE_CIPHER_EX(camellia_256_ecb);
-		DECLARE_CIPHER_EX(camellia_256_cbc);
-		DECLARE_CIPHER_EX(camellia_256_ofb);
-		DECLARE_CIPHER_EX(camellia_256_ctr);
-		DECLARE_CIPHER_EX(camellia_256_cfb);
-		DECLARE_CIPHER_EX(camellia_256_cfb1);
-		DECLARE_CIPHER_EX(camellia_256_cfb8);
-		DECLARE_CIPHER_EX(camellia_256_cfb128);
+		DECLARE_CIPHER(camellia_256_ecb);
+		DECLARE_CIPHER(camellia_256_cbc);
+		DECLARE_CIPHER(camellia_256_ofb);
+		DECLARE_CIPHER(camellia_256_ctr);
+		DECLARE_CIPHER(camellia_256_cfb);
+		DECLARE_CIPHER(camellia_256_cfb1);
+		DECLARE_CIPHER(camellia_256_cfb8);
+		DECLARE_CIPHER(camellia_256_cfb128);
 
-		DECLARE_CIPHER_EX(sm4_ecb);
-		DECLARE_CIPHER_EX(sm4_cbc);
-		DECLARE_CIPHER_EX(sm4_ofb);
-		DECLARE_CIPHER_EX(sm4_ctr);
-		DECLARE_CIPHER_EX(sm4_cfb);
-		DECLARE_CIPHER_EX(sm4_cfb128);
+		DECLARE_CIPHER(sm4_ecb);
+		DECLARE_CIPHER(sm4_cbc);
+		DECLARE_CIPHER(sm4_ofb);
+		DECLARE_CIPHER(sm4_ctr);
+		DECLARE_CIPHER(sm4_cfb);
+		DECLARE_CIPHER(sm4_cfb128);
 
-		DECLARE_CIPHER(chacha_20, EVP_chacha20);
-		DECLARE_CIPHER(chacha_20_poly_1305, EVP_chacha20_poly1305);
+		DECLARE_CIPHER_EX(chacha_20, EVP_chacha20);
+		DECLARE_CIPHER_EX(chacha_20_poly_1305, EVP_chacha20_poly1305);
 	}
 
 	namespace hashing
