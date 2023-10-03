@@ -246,7 +246,7 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
 		template <ciph_f_t evp_cipher_x, bool ownership = true, bool requires_tag = false>
-		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, requires_tag, ownership>>
+		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, ownership, requires_tag>>
 		{
 			using container_t = std::conditional_t<ownership, std::string, view_t>;
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
@@ -263,7 +263,7 @@ namespace mr_crypt
 			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
 			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 1'000) noexcept
 			{
-				return cipher_stateful_t<evp_cipher_x, requires_tag>
+				return cipher_stateful_t<evp_cipher_x, ownership, requires_tag>
 				{
 					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations),
 					include_iv ? pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations) : container_t{}
