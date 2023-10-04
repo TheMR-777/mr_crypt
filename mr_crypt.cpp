@@ -207,7 +207,7 @@ namespace mr_crypt
 				? to_encrypt ? 16 : -16
 				: 0;
 			auto mode_c = evp_cipher_x();
-			auto output = std::string(cipher_final_size(input.size(), EVP_CIPHER_block_size(mode_c)) + tag_length, '\0');
+			auto output = std::string(input.size() + EVP_MAX_BLOCK_LENGTH + tag_length, '\0');
 			auto it_out = reinterpret_cast<byte_t*>(output.data());
 			auto size_i = int{}, size_f = int{};
 			{
@@ -222,6 +222,7 @@ namespace mr_crypt
 				ends(state.get(), it_out + size_i, &size_f);
 				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state.get(), EVP_CTRL_AEAD_GET_TAG, tag_length, it_out + size_i + size_f);
 			}
+			output.resize(size_i + size_f);
 			return output;
 		}
 
