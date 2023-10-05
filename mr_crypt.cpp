@@ -69,8 +69,10 @@ namespace mr_crypt
 
 	namespace pk_cs_5
 	{
+		static constexpr auto std_iterations = 10'000;
+
 		template <const EVP_MD* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
-		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = 1'000) -> std::string
+		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = std_iterations)
 		{
 			std::string out(keylen, '\0');
 			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), keylen, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
@@ -262,7 +264,7 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
 			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
-			static auto with_password(view_t password, view_t salt = {}, size_t iterations = 1'000) noexcept
+			static auto with_password(view_t password, view_t salt = {}, size_t iterations = pk_cs_5::std_iterations) noexcept
 			{
 				return cipher_stateful_t<evp_cipher_x, ownership, requires_tag>
 				{
