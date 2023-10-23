@@ -280,6 +280,25 @@ namespace mr_crypt
 		};
 	}
 
+	namespace pk_cs_5
+	{
+		template <const details::hash_t* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
+		struct as_password : std::ranges::range_adaptor_closure<as_password<underlying_hash>>, details::expose_evp<underlying_hash>
+		{
+			size_t my_pwd_length = 32;
+			view_t my_salt = {};
+			size_t my_iterations = std_iterations;
+
+			constexpr as_password() noexcept = default;
+			constexpr as_password(size_t pwd_length, view_t salt = {}, size_t iterations = std_iterations) noexcept : my_pwd_length{ pwd_length }, my_salt{ salt }, my_iterations{ iterations } {}
+
+			auto operator()(view_t password) const noexcept
+			{
+				return pk_cs_5::pb_kdf2_hmac<underlying_hash>(password, my_pwd_length, my_salt, my_iterations);
+			}
+		};
+	}
+
 	namespace convert
 	{
 		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
