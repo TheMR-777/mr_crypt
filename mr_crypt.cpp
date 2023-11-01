@@ -283,18 +283,18 @@ namespace mr_crypt
 	namespace pk_cs_5
 	{
 		template <const details::hash_t* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
-		struct as_password : std::ranges::range_adaptor_closure<as_password<underlying_hash>>, details::expose_evp<underlying_hash>
+		struct as_key : std::ranges::range_adaptor_closure<as_key<underlying_hash>>, details::expose_evp<underlying_hash>
 		{
-			const size_t pwd_length = 32;
-			const view_t salt = {};
-			const size_t iterations = std_iterations;
+			const size_t pwd_length;
+			const view_t salt;
+			const size_t iterations;
 
-			constexpr as_password() noexcept = default;
-			constexpr as_password(size_t pwd_length, view_t salt = {}, size_t iterations = std_iterations) noexcept : pwd_length{ pwd_length }, salt{ salt }, iterations{ iterations } {}
+			constexpr as_key(size_t pwd_length = 32, view_t salt = {}, size_t iterations = std_iterations) noexcept
+				: pwd_length{ pwd_length }, salt{ salt }, iterations{ iterations } {}
 
 			auto operator()(view_t password) const noexcept
 			{
-				return pk_cs_5::pb_kdf2_hmac<underlying_hash>(password, pwd_length, salt, iterations);
+				return pb_kdf2_hmac<underlying_hash>(password, pwd_length, salt, iterations);
 			}
 		};
 	}
