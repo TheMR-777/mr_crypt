@@ -11,6 +11,12 @@ namespace mr_crypt
 	using byte_t = std::uint8_t;
 	using view_t = std::string_view;
 
+	namespace eternal
+	{
+		static constexpr auto std_iterations = 10'000;
+		static constexpr auto std_key_length = 32;
+	}
+
 	namespace
 	{
 #define DECLARE_CIPHER_EX(NAME, FUNC, ...) \
@@ -29,7 +35,7 @@ namespace mr_crypt
 			return std::uniform_int_distribution<int>{ 0, 255 }(my_engine);
 		}
 
-		auto random_bytes(const size_t n = 32) noexcept
+		auto random_bytes(const size_t n = eternal::std_key_length) noexcept
 		{
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
 		}
@@ -69,10 +75,8 @@ namespace mr_crypt
 
 	namespace pk_cs_5
 	{
-		static constexpr auto std_iterations = 10'000;
-
 		template <const EVP_MD* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
-		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = std_iterations)
+		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = eternal::std_iterations)
 		{
 			auto out = std::string(keylen, '\0');
 			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), keylen, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
@@ -264,7 +268,7 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
 			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
-			static auto with_password(view_t password, view_t salt = {}, size_t iterations = pk_cs_5::std_iterations) noexcept
+			static auto with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return cipher_stateful_t<evp_cipher_x, ownership, requires_tag>
 				{
@@ -289,7 +293,7 @@ namespace mr_crypt
 			const view_t salt;
 			const size_t iterations;
 
-			constexpr as_key(size_t key_length = 32, view_t salt = {}, size_t iterations = std_iterations) noexcept
+			constexpr as_key(size_t key_length = eternal::std_key_length, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 				: key_length{ key_length }, salt{ salt }, iterations{ iterations } {}
 
 			auto operator()(view_t password) const noexcept
@@ -301,6 +305,9 @@ namespace mr_crypt
 
 	namespace convert
 	{
+		template <const details::hash_t* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
+		using to_key = pk_cs_5::as_key<underlying_hash>;
+
 		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
 		constexpr auto to_hex = details::adapter_base_f<details::convert::to_hex>{};
 	}
