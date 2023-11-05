@@ -19,6 +19,9 @@ namespace mr_crypt
 
 	namespace
 	{
+#define DECLARE_HASH_EX(NAME, FUNC, ...) \
+	constexpr auto NAME = details::hash_adapter<FUNC, ##__VA_ARGS__>;
+
 #define DECLARE_CIPHER_EX(NAME, FUNC, ...) \
     template <bool ownership = true> \
     using NAME = details::cipher_stateful_t<FUNC, ownership, ##__VA_ARGS__>;
@@ -40,11 +43,11 @@ namespace mr_crypt
 			return vs::generate_n(random_byte, n) | rg::to<std::string>;
 		}
 
-		auto random_bytes_rsa(const size_t bits_n) noexcept
+		auto random_prime_rsa_pair(const size_t bits_n) noexcept
 		{
 			auto key_loc = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>(nullptr, EVP_PKEY_free);
 			{
-				auto key_ctx = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), &EVP_PKEY_CTX_free);
+				const auto key_ctx = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr), &EVP_PKEY_CTX_free);
 				EVP_PKEY_keygen_init(key_ctx.get());
 				EVP_PKEY_CTX_set_rsa_keygen_bits(key_ctx.get(), bits_n);
 				EVP_PKEY_generate(key_ctx.get(), std::out_ptr(key_loc));
@@ -76,10 +79,10 @@ namespace mr_crypt
 	namespace pk_cs_5
 	{
 		template <const EVP_MD* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
-		auto pb_kdf2_hmac(mr_crypt::view_t password, size_t keylen, mr_crypt::view_t salt = {}, size_t iterations = eternal::std_iterations)
+		auto pb_kdf2_hmac(const mr_crypt::view_t password, const size_t key_length, const mr_crypt::view_t salt = {}, const size_t iterations = eternal::std_iterations)
 		{
-			auto out = std::string(keylen, '\0');
-			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), keylen, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
+			auto out = std::string(key_length, '\0');
+			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), key_length, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
 			return out;
 		}
 	}
@@ -97,7 +100,7 @@ namespace mr_crypt
 			static constexpr auto my_hex_table = std::string_view{ "0123456789abcdef" };
 			static constexpr auto m_padding = '=';
 
-			auto to_base64(view_t input) noexcept
+			auto to_base64(const view_t input) noexcept
 			{
 				auto const o_size = ((4 * input.size() / 3) + 3) & ~3;
 				auto output = std::string(o_size, '=');
@@ -132,7 +135,7 @@ namespace mr_crypt
 				return output;
 			}
 
-			auto to_hex(view_t data) noexcept
+			auto to_hex(const view_t data) noexcept
 			{
 				auto result = std::string(data.size() * 2, '\0');
 				auto it_res = result.begin();
@@ -150,7 +153,7 @@ namespace mr_crypt
 		template <std::string(*just_fun)(view_t), class Derived = void>
 		struct adapter_base_f : std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<Derived>, adapter_base_f<just_fun>, Derived>>
 		{
-			auto operator()(view_t input) const noexcept
+			auto operator()(const view_t input) const noexcept
 			{
 				return just_fun(input);
 			}
@@ -184,12 +187,24 @@ namespace mr_crypt
 			{
 				return produce::random_bytes(iv_size());
 			}
+
+			template <hash_f_t evp_x = mr_crypt::hashing::sha_256.underlying_f>
+			static auto make_key_with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			{
+				return pk_cs_5::pb_kdf2_hmac<evp_x>(password, key_size(), salt, iterations);
+			}
+
+			template <hash_f_t evp_x = mr_crypt::hashing::sha_256.underlying_f>
+			static auto make_iv_with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			{
+				return pk_cs_5::pb_kdf2_hmac<evp_x>(password, iv_size(), salt, iterations);
+			}
 		};
 
 		template <hash_f_t evp_x>
-		auto hash(view_t input) noexcept
+		auto hash(const view_t input) noexcept
 		{
-			auto digest = evp_x();
+			const auto digest = evp_x();
 			auto output = std::string(EVP_MD_get_size(digest), '\0');
 			EVP_Digest(input.data(), input.size(), reinterpret_cast<byte_t*>(output.data()), nullptr, digest, nullptr);
 			return output;
@@ -203,25 +218,25 @@ namespace mr_crypt
 
 		constexpr auto cipher_final_size(const size_t in_size, const int block_size) noexcept
 		{
-			return ((in_size + block_size - 1) / block_size) * block_size;
+			return (in_size + block_size - 1) / block_size * block_size;
 		}
 
 		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false>
-		auto cipher(view_t input, view_t key, view_t iv) noexcept
+		auto cipher(view_t input, const view_t key, const view_t iv) noexcept
 		{
 			constexpr auto tag_length = requires_tag
 				? to_encrypt ? 16 : -16
 				: 0;
-			auto mode_c = evp_cipher_x();
+			const auto mode_c = evp_cipher_x();
 			auto output = std::string(input.size() + EVP_MAX_BLOCK_LENGTH + tag_length, '\0');
-			auto it_out = reinterpret_cast<byte_t*>(output.data());
+			const auto it_out = reinterpret_cast<byte_t*>(output.data());
 			auto size_i = int{}, size_f = int{};
 			{
 				constexpr auto init = to_encrypt ? EVP_EncryptInit : EVP_DecryptInit;
 				constexpr auto ping = to_encrypt ? EVP_EncryptUpdate : EVP_DecryptUpdate;
 				constexpr auto ends = to_encrypt ? EVP_EncryptFinal : EVP_DecryptFinal;
 
-				auto state = std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)>{ EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free };
+				const auto state = std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)>{ EVP_CIPHER_CTX_new(), EVP_CIPHER_CTX_free };
 				init(state.get(), mode_c, reinterpret_cast<const byte_t*>(key.data()), reinterpret_cast<const byte_t*>(iv.data()));
 				ping(state.get(), it_out, &size_i, reinterpret_cast<const byte_t*>(input.data()), input.size() + (requires_tag && !to_encrypt) * tag_length);
 				if constexpr (requires_tag && !to_encrypt) EVP_CIPHER_CTX_ctrl(state.get(), EVP_CTRL_AEAD_SET_TAG, -tag_length, (view_t::value_type*)input.data() + input.size() + tag_length);
@@ -232,15 +247,12 @@ namespace mr_crypt
 			return output;
 		}
 
-		template <ciph_f_t evp_cipher_x, class D>
-		struct cipher_base_f : std::ranges::range_adaptor_closure<D>, info_provider<evp_cipher_x> {};
-
 		template <ciph_f_t evp_cipher_x, bool to_encrypt = true, bool requires_tag = false>
-		struct cipher_adapter_wrap : cipher_base_f<evp_cipher_x, cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>
+		struct cipher_adapter_wrap : std::ranges::range_adaptor_closure<cipher_adapter_wrap<evp_cipher_x, to_encrypt, requires_tag>>, info_provider<evp_cipher_x>
 		{
 			view_t my_key, my_iv;
-			constexpr cipher_adapter_wrap(view_t key, view_t iv = {}) noexcept : my_key{ key }, my_iv{ iv } {}
-			auto operator()(view_t input) const noexcept
+			constexpr cipher_adapter_wrap(const view_t key, const view_t iv = {}) noexcept : my_key{ key }, my_iv{ iv } {}
+			auto operator()(const view_t input) const noexcept
 			{
 				return cipher<evp_cipher_x, to_encrypt, requires_tag>(input, my_key, my_iv);
 			}
@@ -253,13 +265,13 @@ namespace mr_crypt
 		using dec_adapter = cipher_adapter_wrap<evp_cipher_x, false, requires_tag>;
 
 		template <ciph_f_t evp_cipher_x, bool ownership = true, bool requires_tag = false>
-		struct cipher_stateful_t : cipher_base_f<evp_cipher_x, cipher_stateful_t<evp_cipher_x, ownership, requires_tag>>
+		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, ownership, requires_tag>>, info_provider<evp_cipher_x>
 		{
 			using container_t = std::conditional_t<ownership, std::string, view_t>;
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
 			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
 
-			const container_t my_key = info_provider<evp_cipher_x>::make_key(), the_iv = info_provider<evp_cipher_x>::make_iv();
+			const container_t my_key = make_key(), the_iv = make_iv();
 
 			const encrypt_t encrypt = { my_key, the_iv };
 			const decrypt_t decrypt = { my_key, the_iv };
@@ -268,9 +280,9 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
 			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
-			static auto with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+				static auto with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
-				return cipher_stateful_t<evp_cipher_x, ownership, requires_tag>
+				return cipher_stateful_t
 				{
 					pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::key_size(), salt, iterations),
 					include_iv ? pk_cs_5::pb_kdf2_hmac<evp_x>(password, info_provider<evp_cipher_x>::iv_size(), salt, iterations) : container_t{}
@@ -284,6 +296,30 @@ namespace mr_crypt
 		};
 	}
 
+	namespace hashing
+	{
+		DECLARE_HASH_EX(md_5, EVP_md5);
+		DECLARE_HASH_EX(md_5_sha_160, EVP_sha1);
+		DECLARE_HASH_EX(ripe_md_160, EVP_ripemd160);
+		DECLARE_HASH_EX(blake_2s_256, EVP_blake2s256);
+		DECLARE_HASH_EX(blake_2b_512, EVP_blake2b512);
+		DECLARE_HASH_EX(shake_128, EVP_shake128);
+		DECLARE_HASH_EX(shake_256, EVP_shake256);
+
+		DECLARE_HASH_EX(sha_160, EVP_sha1);
+		DECLARE_HASH_EX(sha_224, EVP_sha224);
+		DECLARE_HASH_EX(sha_256, EVP_sha256);
+		DECLARE_HASH_EX(sha_384, EVP_sha384);
+		DECLARE_HASH_EX(sha_512, EVP_sha512);
+		DECLARE_HASH_EX(sha_512_224, EVP_sha512_224);
+		DECLARE_HASH_EX(sha_512_256, EVP_sha512_256);
+
+		DECLARE_HASH_EX(sha3_224, EVP_sha3_224);
+		DECLARE_HASH_EX(sha3_256, EVP_sha3_256);
+		DECLARE_HASH_EX(sha3_384, EVP_sha3_384);
+		DECLARE_HASH_EX(sha3_512, EVP_sha3_512);
+	}
+
 	namespace pk_cs_5
 	{
 		template <const details::hash_t* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
@@ -293,10 +329,10 @@ namespace mr_crypt
 			const view_t salt;
 			const size_t iterations;
 
-			constexpr as_key(size_t key_length = eternal::std_key_length, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			constexpr as_key(const size_t key_length = eternal::std_key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 				: key_length{ key_length }, salt{ salt }, iterations{ iterations } {}
 
-			auto operator()(view_t password) const noexcept
+			auto operator()(const view_t password) const noexcept
 			{
 				return pb_kdf2_hmac<underlying_hash>(password, key_length, salt, iterations);
 			}
@@ -426,30 +462,6 @@ namespace mr_crypt
 
 		DECLARE_CIPHER_EX(chacha_20, EVP_chacha20);
 		DECLARE_CIPHER_EX(chacha_20_poly_1305, EVP_chacha20_poly1305);
-	}
-
-	namespace hashing
-	{
-		constexpr auto md_5 = details::hash_adapter<EVP_md5>;
-		constexpr auto md_5_sha_160 = details::hash_adapter<EVP_sha1>;
-		constexpr auto ripe_md_160 = details::hash_adapter<EVP_ripemd160>;
-		constexpr auto blake_2s_256 = details::hash_adapter<EVP_blake2s256>;
-		constexpr auto blake_2b_512 = details::hash_adapter<EVP_blake2b512>;
-		constexpr auto shake_128 = details::hash_adapter<EVP_shake128>;
-		constexpr auto shake_256 = details::hash_adapter<EVP_shake256>;
-
-		constexpr auto sha_160 = details::hash_adapter<EVP_sha1>;
-		constexpr auto sha_224 = details::hash_adapter<EVP_sha224>;
-		constexpr auto sha_256 = details::hash_adapter<EVP_sha256>;
-		constexpr auto sha_384 = details::hash_adapter<EVP_sha384>;
-		constexpr auto sha_512 = details::hash_adapter<EVP_sha512>;
-		constexpr auto sha_512_224 = details::hash_adapter<EVP_sha512_224>;
-		constexpr auto sha_512_256 = details::hash_adapter<EVP_sha512_256>;
-
-		constexpr auto sha3_224 = details::hash_adapter<EVP_sha3_224>;
-		constexpr auto sha3_256 = details::hash_adapter<EVP_sha3_256>;
-		constexpr auto sha3_384 = details::hash_adapter<EVP_sha3_384>;
-		constexpr auto sha3_512 = details::hash_adapter<EVP_sha3_512>;
 	}
 }
 
