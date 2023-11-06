@@ -11,10 +11,42 @@ namespace mr_crypt
 	using byte_t = std::uint8_t;
 	using view_t = std::string_view;
 
-	namespace eternal
+	namespace details
 	{
-		static constexpr auto std_iterations = 10'000;
-		static constexpr auto std_key_length = 32;
+		using hash_t = EVP_MD;
+		using ciph_t = EVP_CIPHER;
+		using hash_f_t = const hash_t* (*)();
+		using ciph_f_t = const ciph_t* (*)();
+
+		template <std::string(*just_fun)(view_t), class Derived = void>
+		struct adapter_base_f : std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<Derived>, adapter_base_f<just_fun>, Derived>>
+		{
+			auto operator()(const view_t input) const noexcept
+			{
+				return just_fun(input);
+			}
+		};
+
+		template <const auto* (*evp_x)()>
+		struct expose_evp
+		{
+			static constexpr auto underlying_f = evp_x;
+		};
+
+		template <hash_f_t evp_x>
+		auto hash(const view_t input) noexcept
+		{
+			const auto digest = evp_x();
+			auto output = std::string(EVP_MD_get_size(digest), '\0');
+			EVP_Digest(input.data(), input.size(), reinterpret_cast<byte_t*>(output.data()), nullptr, digest, nullptr);
+			return output;
+		}
+
+		template <hash_f_t evp_x>
+		struct hash_adapter_wrap : adapter_base_f<hash<evp_x>, hash_adapter_wrap<evp_x>>, expose_evp<evp_x> { };
+
+		template <hash_f_t evp_x>
+		static constexpr auto hash_adapter = hash_adapter_wrap<evp_x>{};
 	}
 
 	namespace
@@ -28,6 +60,37 @@ namespace mr_crypt
 
 #define DECLARE_CIPHER(NAME, ...) \
 	DECLARE_CIPHER_EX(NAME, EVP_##NAME, ##__VA_ARGS__)
+	}
+
+	namespace hashing
+	{
+		DECLARE_HASH_EX(md_5, EVP_md5);
+		DECLARE_HASH_EX(md_5_sha_160, EVP_sha1);
+		DECLARE_HASH_EX(ripe_md_160, EVP_ripemd160);
+		DECLARE_HASH_EX(blake_2s_256, EVP_blake2s256);
+		DECLARE_HASH_EX(blake_2b_512, EVP_blake2b512);
+		DECLARE_HASH_EX(shake_128, EVP_shake128);
+		DECLARE_HASH_EX(shake_256, EVP_shake256);
+
+		DECLARE_HASH_EX(sha_160, EVP_sha1);
+		DECLARE_HASH_EX(sha_224, EVP_sha224);
+		DECLARE_HASH_EX(sha_256, EVP_sha256);
+		DECLARE_HASH_EX(sha_384, EVP_sha384);
+		DECLARE_HASH_EX(sha_512, EVP_sha512);
+		DECLARE_HASH_EX(sha_512_224, EVP_sha512_224);
+		DECLARE_HASH_EX(sha_512_256, EVP_sha512_256);
+
+		DECLARE_HASH_EX(sha3_224, EVP_sha3_224);
+		DECLARE_HASH_EX(sha3_256, EVP_sha3_256);
+		DECLARE_HASH_EX(sha3_384, EVP_sha3_384);
+		DECLARE_HASH_EX(sha3_512, EVP_sha3_512);
+	}
+
+	namespace eternal
+	{
+		static constexpr auto std_iterations = 10'000;
+		static constexpr auto std_key_length = 32;
+		static constexpr auto std_digest_alg = hashing::sha_256;
 	}
 
 	namespace produce
@@ -78,7 +141,7 @@ namespace mr_crypt
 
 	namespace pk_cs_5
 	{
-		template <const EVP_MD* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
+		template <const EVP_MD* (*underlying_hash)() = eternal::std_digest_alg.underlying_f>
 		auto pb_kdf2_hmac(const mr_crypt::view_t password, const size_t key_length, const mr_crypt::view_t salt = {}, const size_t iterations = eternal::std_iterations)
 		{
 			auto out = std::string(key_length, '\0');
@@ -89,11 +152,6 @@ namespace mr_crypt
 
 	namespace details
 	{
-		using hash_t = EVP_MD;
-		using ciph_t = EVP_CIPHER;
-		using hash_f_t = const hash_t* (*)();
-		using ciph_f_t = const ciph_t* (*)();
-
 		namespace convert
 		{
 			static constexpr auto base64_table = std::string_view{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" };
@@ -150,21 +208,6 @@ namespace mr_crypt
 			}
 		}
 
-		template <std::string(*just_fun)(view_t), class Derived = void>
-		struct adapter_base_f : std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<Derived>, adapter_base_f<just_fun>, Derived>>
-		{
-			auto operator()(const view_t input) const noexcept
-			{
-				return just_fun(input);
-			}
-		};
-
-		template <const auto* (*evp_x)()>
-		struct expose_evp
-		{
-			static constexpr auto underlying_f = evp_x;
-		};
-
 		template <ciph_f_t evp_cipher_x>
 		struct info_provider : expose_evp<evp_cipher_x>
 		{
@@ -188,33 +231,18 @@ namespace mr_crypt
 				return produce::random_bytes(iv_size());
 			}
 
-			template <hash_f_t evp_x = mr_crypt::hashing::sha_256.underlying_f>
+			template <hash_f_t evp_x = eternal::std_digest_alg.underlying_f>
 			static auto make_key_using_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return pk_cs_5::pb_kdf2_hmac<evp_x>(password, key_size(), salt, iterations);
 			}
 
-			template <hash_f_t evp_x = mr_crypt::hashing::sha_256.underlying_f>
+			template <hash_f_t evp_x = eternal::std_digest_alg.underlying_f>
 			static auto make_iv_using_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return pk_cs_5::pb_kdf2_hmac<evp_x>(password, iv_size(), salt, iterations);
 			}
 		};
-
-		template <hash_f_t evp_x>
-		auto hash(const view_t input) noexcept
-		{
-			const auto digest = evp_x();
-			auto output = std::string(EVP_MD_get_size(digest), '\0');
-			EVP_Digest(input.data(), input.size(), reinterpret_cast<byte_t*>(output.data()), nullptr, digest, nullptr);
-			return output;
-		}
-
-		template <hash_f_t evp_x>
-		struct hash_adapter_wrap : adapter_base_f<hash<evp_x>, hash_adapter_wrap<evp_x>>, expose_evp<evp_x> { };
-
-		template <hash_f_t evp_x>
-		static constexpr auto hash_adapter = hash_adapter_wrap<evp_x>{};
 
 		constexpr auto cipher_final_size(const size_t in_size, const int block_size) noexcept
 		{
@@ -279,7 +307,7 @@ namespace mr_crypt
 			constexpr cipher_stateful_t() noexcept requires ownership = default;
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
-			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
+			template <bool include_iv = true, hash_f_t evp_x = eternal::std_digest_alg.underlying_f> requires ownership
 			static auto using_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return cipher_stateful_t
@@ -296,33 +324,9 @@ namespace mr_crypt
 		};
 	}
 
-	namespace hashing
-	{
-		DECLARE_HASH_EX(md_5, EVP_md5);
-		DECLARE_HASH_EX(md_5_sha_160, EVP_sha1);
-		DECLARE_HASH_EX(ripe_md_160, EVP_ripemd160);
-		DECLARE_HASH_EX(blake_2s_256, EVP_blake2s256);
-		DECLARE_HASH_EX(blake_2b_512, EVP_blake2b512);
-		DECLARE_HASH_EX(shake_128, EVP_shake128);
-		DECLARE_HASH_EX(shake_256, EVP_shake256);
-
-		DECLARE_HASH_EX(sha_160, EVP_sha1);
-		DECLARE_HASH_EX(sha_224, EVP_sha224);
-		DECLARE_HASH_EX(sha_256, EVP_sha256);
-		DECLARE_HASH_EX(sha_384, EVP_sha384);
-		DECLARE_HASH_EX(sha_512, EVP_sha512);
-		DECLARE_HASH_EX(sha_512_224, EVP_sha512_224);
-		DECLARE_HASH_EX(sha_512_256, EVP_sha512_256);
-
-		DECLARE_HASH_EX(sha3_224, EVP_sha3_224);
-		DECLARE_HASH_EX(sha3_256, EVP_sha3_256);
-		DECLARE_HASH_EX(sha3_384, EVP_sha3_384);
-		DECLARE_HASH_EX(sha3_512, EVP_sha3_512);
-	}
-
 	namespace pk_cs_5
 	{
-		template <details::hash_f_t underlying_hash = hashing::sha_256.underlying_f>
+		template <details::hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 		struct as_key : std::ranges::range_adaptor_closure<as_key<underlying_hash>>, details::expose_evp<underlying_hash>
 		{
 			const size_t key_length;
@@ -341,7 +345,7 @@ namespace mr_crypt
 
 	namespace convert
 	{
-		template <details::hash_f_t underlying_hash = hashing::sha_256.underlying_f>
+		template <details::hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 		using to_key = pk_cs_5::as_key<underlying_hash>;
 
 		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
