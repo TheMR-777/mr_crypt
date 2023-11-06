@@ -173,14 +173,14 @@ namespace mr_crypt
 				return EVP_CIPHER_key_length(evp_cipher_x());
 			}
 
-			static auto iv_size() noexcept
-			{
-				return EVP_CIPHER_iv_length(evp_cipher_x());
-			}
-
 			static auto make_key() noexcept
 			{
 				return produce::random_bytes(key_size());
+			}
+
+			static auto iv_size() noexcept
+			{
+				return EVP_CIPHER_iv_length(evp_cipher_x());
 			}
 
 			static auto make_iv() noexcept
@@ -280,7 +280,7 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
 			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
-				static auto with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			static auto with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return cipher_stateful_t
 				{
@@ -322,7 +322,7 @@ namespace mr_crypt
 
 	namespace pk_cs_5
 	{
-		template <const details::hash_t* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
+		template <details::hash_f_t underlying_hash = hashing::sha_256.underlying_f>
 		struct as_key : std::ranges::range_adaptor_closure<as_key<underlying_hash>>, details::expose_evp<underlying_hash>
 		{
 			const size_t key_length;
@@ -341,7 +341,7 @@ namespace mr_crypt
 
 	namespace convert
 	{
-		template <const details::hash_t* (*underlying_hash)() = mr_crypt::hashing::sha_256.underlying_f>
+		template <details::hash_f_t underlying_hash = hashing::sha_256.underlying_f>
 		using to_key = pk_cs_5::as_key<underlying_hash>;
 
 		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
