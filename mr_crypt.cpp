@@ -23,11 +23,11 @@ namespace mr_crypt
 	constexpr auto NAME = details::hash_adapter<FUNC, ##__VA_ARGS__>;
 
 #define DECLARE_CIPHER_EX(NAME, FUNC, ...) \
-    template <bool ownership = true> \
-    using NAME = details::cipher_stateful_t<FUNC, ownership, ##__VA_ARGS__>;
+	template <bool ownership = true> \
+	using NAME = details::cipher_stateful_t<FUNC, ownership, ##__VA_ARGS__>;
 
 #define DECLARE_CIPHER(NAME, ...) \
-    DECLARE_CIPHER_EX(NAME, EVP_##NAME, ##__VA_ARGS__)
+	DECLARE_CIPHER_EX(NAME, EVP_##NAME, ##__VA_ARGS__)
 	}
 
 	namespace produce
@@ -189,13 +189,13 @@ namespace mr_crypt
 			}
 
 			template <hash_f_t evp_x = mr_crypt::hashing::sha_256.underlying_f>
-			static auto make_key_with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			static auto make_key_using_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return pk_cs_5::pb_kdf2_hmac<evp_x>(password, key_size(), salt, iterations);
 			}
 
 			template <hash_f_t evp_x = mr_crypt::hashing::sha_256.underlying_f>
-			static auto make_iv_with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			static auto make_iv_using_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return pk_cs_5::pb_kdf2_hmac<evp_x>(password, iv_size(), salt, iterations);
 			}
@@ -280,7 +280,7 @@ namespace mr_crypt
 			constexpr cipher_stateful_t(container_t key, container_t iv = {}) noexcept : my_key{ std::move(key) }, the_iv{ std::move(iv) } {}
 
 			template <bool include_iv = true, hash_f_t evp_x = EVP_sha256> requires ownership
-			static auto with_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
+			static auto using_password(view_t password, view_t salt = {}, size_t iterations = eternal::std_iterations) noexcept
 			{
 				return cipher_stateful_t
 				{
