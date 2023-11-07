@@ -10,14 +10,13 @@ namespace mr_crypt
 	namespace vs = rg::views;
 	using byte_t = std::uint8_t;
 	using view_t = std::string_view;
+	using hash_t = EVP_MD;
+	using ciph_t = EVP_CIPHER;
+	using hash_f_t = const hash_t* (*)();
+	using ciph_f_t = const ciph_t* (*)();
 
 	namespace details
 	{
-		using hash_t = EVP_MD;
-		using ciph_t = EVP_CIPHER;
-		using hash_f_t = const hash_t* (*)();
-		using ciph_f_t = const ciph_t* (*)();
-
 		template <std::string(*just_fun)(view_t), class Derived = void>
 		struct adapter_base_f : std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<Derived>, adapter_base_f<just_fun>, Derived>>
 		{
@@ -25,6 +24,12 @@ namespace mr_crypt
 			{
 				return just_fun(input);
 			}
+		};
+
+		template <auto x>
+		struct expose
+		{
+			static constexpr auto underlying_e = x;
 		};
 
 		template <const auto* (*evp_x)()>
@@ -122,8 +127,8 @@ namespace mr_crypt
 				std::string(i2d_PUBKEY(key_loc.get(), nullptr), '\0'),
 			};
 
-			auto pvt_buf = reinterpret_cast<mr_crypt::byte_t*>(keys.first.data());
-			auto pub_buf = reinterpret_cast<mr_crypt::byte_t*>(keys.second.data());
+			auto pvt_buf = reinterpret_cast<byte_t*>(keys.first.data());
+			auto pub_buf = reinterpret_cast<byte_t*>(keys.second.data());
 
 			i2d_PrivateKey(key_loc.get(), &pvt_buf);
 			i2d_PUBKEY(key_loc.get(), &pub_buf);
@@ -142,14 +147,13 @@ namespace mr_crypt
 	namespace pk_cs_5
 	{
 		template <const EVP_MD* (*underlying_hash)() = eternal::std_digest_alg.underlying_f>
-		auto pb_kdf2_hmac(const mr_crypt::view_t password, const size_t key_length, const mr_crypt::view_t salt = {}, const size_t iterations = eternal::std_iterations)
+		auto pb_kdf2_hmac(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations)
 		{
 			auto out = std::string(key_length, '\0');
-			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const mr_crypt::byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), key_length, reinterpret_cast<mr_crypt::byte_t*>(out.data()));
+			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), key_length, reinterpret_cast<byte_t*>(out.data()));
 			return out;
 		}
 	}
-
 	namespace details
 	{
 		namespace convert
@@ -326,7 +330,7 @@ namespace mr_crypt
 
 	namespace pk_cs_5
 	{
-		template <details::hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
+		template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 		struct as_key : std::ranges::range_adaptor_closure<as_key<underlying_hash>>, details::expose_evp<underlying_hash>
 		{
 			const size_t key_length;
@@ -345,7 +349,7 @@ namespace mr_crypt
 
 	namespace convert
 	{
-		template <details::hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
+		template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 		using to_key = pk_cs_5::as_key<underlying_hash>;
 
 		constexpr auto to_base64 = details::adapter_base_f<details::convert::to_base64>{};
