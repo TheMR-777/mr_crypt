@@ -12,12 +12,13 @@ namespace mr_crypt
 	using view_t = std::string_view;
 	using hash_t = EVP_MD;
 	using ciph_t = EVP_CIPHER;
+	using return_t = std::string;
 	using hash_f_t = const hash_t* (*)();
 	using ciph_f_t = const ciph_t* (*)();
 
 	namespace details
 	{
-		template <std::string(*just_fun)(view_t), class Derived = void>
+		template <return_t(*just_fun)(view_t), class Derived = void>
 		struct adapter_base_f : std::ranges::range_adaptor_closure<std::conditional_t<std::is_void_v<Derived>, adapter_base_f<just_fun>, Derived>>
 		{
 			auto operator()(const view_t input) const noexcept
@@ -42,7 +43,7 @@ namespace mr_crypt
 		auto hash(const view_t input) noexcept
 		{
 			const auto digest = evp_x();
-			auto output = std::string(EVP_MD_get_size(digest), '\0');
+			auto output = return_t(EVP_MD_get_size(digest), '\0');
 			EVP_Digest(input.data(), input.size(), reinterpret_cast<byte_t*>(output.data()), nullptr, digest, nullptr);
 			return output;
 		}
@@ -108,7 +109,7 @@ namespace mr_crypt
 
 		auto random_bytes(const size_t n = eternal::std_key_length) noexcept
 		{
-			return vs::generate_n(random_byte, n) | rg::to<std::string>;
+			return vs::generate_n(random_byte, n) | rg::to<return_t>;
 		}
 
 		auto random_prime_rsa_pair(const size_t bits_n) noexcept
@@ -123,8 +124,8 @@ namespace mr_crypt
 
 			auto keys = std::pair
 			{
-				std::string(i2d_PrivateKey(key_loc.get(), nullptr), '\0'),
-				std::string(i2d_PUBKEY(key_loc.get(), nullptr), '\0'),
+				return_t(i2d_PrivateKey(key_loc.get(), nullptr), '\0'),
+				return_t(i2d_PUBKEY(key_loc.get(), nullptr), '\0'),
 			};
 
 			auto pvt_buf = reinterpret_cast<byte_t*>(keys.first.data());
@@ -146,14 +147,15 @@ namespace mr_crypt
 
 	namespace pk_cs_5
 	{
-		template <const EVP_MD* (*underlying_hash)() = eternal::std_digest_alg.underlying_f>
+		template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 		auto pb_kdf2_hmac(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations)
 		{
-			auto out = std::string(key_length, '\0');
+			auto out = return_t(key_length, '\0');
 			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), key_length, reinterpret_cast<byte_t*>(out.data()));
 			return out;
 		}
 	}
+
 	namespace details
 	{
 		namespace convert
@@ -165,7 +167,7 @@ namespace mr_crypt
 			auto to_base64(const view_t input) noexcept
 			{
 				auto const o_size = ((4 * input.size() / 3) + 3) & ~3;
-				auto output = std::string(o_size, '=');
+				auto output = return_t(o_size, '=');
 				auto it_out = output.begin();
 
 				for (size_t i = 0; i < input.size(); i += 3)
@@ -199,7 +201,7 @@ namespace mr_crypt
 
 			auto to_hex(const view_t data) noexcept
 			{
-				auto result = std::string(data.size() * 2, '\0');
+				auto result = return_t(data.size() * 2, '\0');
 				auto it_res = result.begin();
 
 				for (byte_t const b : data)
@@ -260,7 +262,7 @@ namespace mr_crypt
 				? to_encrypt ? 16 : -16
 				: 0;
 			const auto mode_c = evp_cipher_x();
-			auto output = std::string(input.size() + EVP_MAX_BLOCK_LENGTH + tag_length, '\0');
+			auto output = return_t(input.size() + EVP_MAX_BLOCK_LENGTH + tag_length, '\0');
 			const auto it_out = reinterpret_cast<byte_t*>(output.data());
 			auto size_i = int{}, size_f = int{};
 			{
@@ -299,7 +301,7 @@ namespace mr_crypt
 		template <ciph_f_t evp_cipher_x, bool ownership = true, bool requires_tag = false>
 		struct cipher_stateful_t : std::ranges::range_adaptor_closure<cipher_stateful_t<evp_cipher_x, ownership, requires_tag>>, info_provider<evp_cipher_x>
 		{
-			using container_t = std::conditional_t<ownership, std::string, view_t>;
+			using container_t = std::conditional_t<ownership, return_t, view_t>;
 			using encrypt_t = enc_adapter<evp_cipher_x, requires_tag>;
 			using decrypt_t = dec_adapter<evp_cipher_x, requires_tag>;
 
