@@ -160,8 +160,8 @@ namespace mr_crypt
 	{
 		namespace convert
 		{
-			static constexpr auto base64_table = std::string_view{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" };
-			static constexpr auto my_hex_table = std::string_view{ "0123456789abcdef" };
+			static constexpr auto base64_table = view_t{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" };
+			static constexpr auto my_hex_table = view_t{ "0123456789abcdef" };
 			static constexpr auto m_padding = '=';
 
 			auto to_base64(const view_t input) noexcept
