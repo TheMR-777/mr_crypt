@@ -94,7 +94,6 @@ namespace mr_crypt
 
 	namespace eternal
 	{
-		static constexpr auto std_scrypt_its = 16'384;
 		static constexpr auto std_iterations = 10'000;
 		static constexpr auto std_key_length = 32;
 		static constexpr auto std_digest_alg = hashing::sha_256;
@@ -156,10 +155,11 @@ namespace mr_crypt
 			return out;
 		}
 
-		auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t n = eternal::std_scrypt_its, const uint64_t r = 8, const uint64_t p = 1, const uint64_t max = 0) noexcept
+		template <uint64_t r_block_size = 8, uint64_t p_parallelism_factor = 1>
+		auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 		{
 			auto out = return_t(key_length, '\0');
-			EVP_PBE_scrypt(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), n, r, p, max, reinterpret_cast<byte_t*>(out.data()), key_length);
+			EVP_PBE_scrypt(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), iterations, r_block_size, p_parallelism_factor, 0, reinterpret_cast<byte_t*>(out.data()), key_length);
 			return out;
 		}
 	}
