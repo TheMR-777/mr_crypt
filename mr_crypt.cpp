@@ -285,7 +285,7 @@ namespace mr_crypt
 				ends(state.get(), it_out + size_i, &size_f);
 				if constexpr (requires_tag && to_encrypt)  EVP_CIPHER_CTX_ctrl(state.get(), EVP_CTRL_AEAD_GET_TAG, tag_length, it_out + size_i + size_f);
 			}
-			output.resize(size_i + size_f);
+			output.resize(size_i + size_f + (to_encrypt * tag_length));
 			return output;
 		}
 
