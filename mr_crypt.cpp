@@ -481,9 +481,52 @@ namespace mr_crypt
 		DECLARE_CIPHER_EX(chacha_20, EVP_chacha20);
 		DECLARE_CIPHER_EX(chacha_20_poly_1305, EVP_chacha20_poly1305);
 	}
+
+	namespace rsa
+	{
+		using key_ptr_t = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
+		using context_ptr_t = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
+
+		key_ptr_t generate_keypair(size_t bits = 2048)
+		{
+			auto key = key_ptr_t(nullptr, EVP_PKEY_free);
+			auto ctx = context_ptr_t(EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr), EVP_PKEY_CTX_free);
+			// auto ctx = context_ptr_t(EVP_PKEY_CTX_new_from_pkey(nullptr, key.get(), nullptr), EVP_PKEY_CTX_free);
+
+			EVP_PKEY_keygen_init(ctx.get());
+			EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), bits);
+			EVP_PKEY_keygen(ctx.get(), std::inout_ptr(key));
+
+			return key;
+		}
+
+		template <bool to_encrypt = true>
+		auto cipher(key_ptr_t::element_type* key, view_t data)
+		{
+			auto ctx = context_ptr_t{ EVP_PKEY_CTX_new_from_pkey(nullptr, key, nullptr), EVP_PKEY_CTX_free};
+			auto len = size_t{};
+
+			constexpr auto init = to_encrypt ? EVP_PKEY_encrypt_init : EVP_PKEY_decrypt_init;
+			constexpr auto ping = to_encrypt ? EVP_PKEY_encrypt : EVP_PKEY_decrypt;
+
+			init(ctx.get());
+			ping(ctx.get(), nullptr, &len, reinterpret_cast<const byte_t*>(data.data()), data.size());
+
+			auto out = return_t(len, '\0');
+			ping(ctx.get(), reinterpret_cast<byte_t*>(out.data()), &len, reinterpret_cast<const byte_t*>(data.data()), data.size());
+
+			out.resize(len);
+			return out;
+		}
+	}
 }
 
 int main()
 {
 	constexpr auto my_data = std::string_view{ "TheMR" };
+	{
+		auto keys = mr_crypt::rsa::generate_keypair();
+		const auto encrypt = mr_crypt::rsa::cipher<1>(keys.get(), my_data);
+		const auto decrypt = mr_crypt::rsa::cipher<0>(keys.get(), encrypt);
+	}
 }
