@@ -77,6 +77,7 @@ namespace mr_crypt
 		DECLARE_HASH_EX(blake_2b_512, EVP_blake2b512);
 		DECLARE_HASH_EX(shake_128, EVP_shake128);
 		DECLARE_HASH_EX(shake_256, EVP_shake256);
+		DECLARE_HASH_EX(sm3, EVP_sm3);
 
 		DECLARE_HASH_EX(sha_160, EVP_sha1);
 		DECLARE_HASH_EX(sha_224, EVP_sha224);
