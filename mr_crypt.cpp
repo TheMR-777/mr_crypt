@@ -163,6 +163,46 @@ namespace mr_crypt
 			EVP_PBE_scrypt(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), iterations, r_block_size, p_parallelism_factor, 0, reinterpret_cast<byte_t*>(out.data()), key_length);
 			return out;
 		}
+
+		namespace v2
+		{
+			template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
+			auto pb_kdf2_hmac(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
+			{
+				const auto context = std::unique_ptr<EVP_KDF_CTX, decltype(&EVP_KDF_CTX_free)>{ EVP_KDF_CTX_new(EVP_KDF_fetch(nullptr, "PBKDF2", nullptr)), EVP_KDF_CTX_free };
+				const auto options = std::array
+				{
+					OSSL_PARAM_construct_utf8_string("digest", const_cast<char*>(EVP_MD_name(underlying_hash())), 0),
+					OSSL_PARAM_construct_octet_string("salt", (void*)salt.data(), salt.size()),
+					OSSL_PARAM_construct_octet_string("pass", (void*)password.data(), password.size()),
+					OSSL_PARAM_construct_uint64("iter", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
+					OSSL_PARAM_construct_end()
+				};
+				auto out = return_t(key_length, '\0');
+				auto ret = EVP_KDF_derive(context.get(), reinterpret_cast<byte_t*>(out.data()), key_length, options.data());
+				return out;
+			}
+
+			template <uint64_t r_block_size = 8, uint64_t p_parallelism_factor = 1>
+			auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
+			{
+				constexpr size_t r = r_block_size;
+				constexpr size_t p = p_parallelism_factor;
+				const auto context = std::unique_ptr<EVP_KDF_CTX, decltype(&EVP_KDF_CTX_free)>{ EVP_KDF_CTX_new(EVP_KDF_fetch(nullptr, "scrypt", nullptr)), EVP_KDF_CTX_free };
+				const auto options = std::array
+				{
+					OSSL_PARAM_construct_octet_string("salt", (void*)salt.data(), salt.size()),
+					OSSL_PARAM_construct_octet_string("pass", (void*)password.data(), password.size()),
+					OSSL_PARAM_construct_uint64("N", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
+					OSSL_PARAM_construct_size_t("r", const_cast<size_t*>(&r)),
+					OSSL_PARAM_construct_size_t("p", const_cast<size_t*>(&p)),
+					OSSL_PARAM_construct_end()
+				};
+				auto out = return_t(key_length, '\0');
+				auto ret = EVP_KDF_derive(context.get(), reinterpret_cast<byte_t*>(out.data()), key_length, options.data());
+				return out;
+			}
+		}
 	}
 
 	namespace details
