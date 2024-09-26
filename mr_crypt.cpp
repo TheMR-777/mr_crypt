@@ -53,6 +53,27 @@ namespace mr_crypt
 
 		template <hash_f_t evp_x>
 		static constexpr auto hash_adapter = hash_adapter_wrap<evp_x>{};
+
+		auto key_derivation_base(
+			const view_t password,
+			const size_t key_length,
+			const view_t salt = {},
+			const view_t algo_name = {},
+			std::same_as<OSSL_PARAM> auto&&... more_options
+		)
+		{
+			const auto context = std::unique_ptr<EVP_KDF_CTX, decltype(&EVP_KDF_CTX_free)>{ EVP_KDF_CTX_new(EVP_KDF_fetch(nullptr, algo_name.data(), nullptr)), EVP_KDF_CTX_free };
+			const auto options = std::array
+			{
+				OSSL_PARAM_construct_octet_string("salt", (void*)salt.data(), salt.size()),
+				OSSL_PARAM_construct_octet_string("pass", (void*)password.data(), password.size()),
+				more_options...,
+				OSSL_PARAM_construct_end()
+			};
+			auto out = return_t(key_length, '\0');
+			auto ret = EVP_KDF_derive(context.get(), reinterpret_cast<byte_t*>(out.data()), key_length, options.data());
+			return out;
+		}
 	}
 
 	namespace
@@ -166,43 +187,23 @@ namespace mr_crypt
 
 		namespace v2
 		{
-			auto run_kdf(
-				const view_t password,
-				const size_t key_length,
-				const view_t salt = {},
-				const view_t algo_name = {},
-				std::same_as<OSSL_PARAM> auto&&... more_options
-			)
-			{
-				const auto context = std::unique_ptr<EVP_KDF_CTX, decltype(&EVP_KDF_CTX_free)>{ EVP_KDF_CTX_new(EVP_KDF_fetch(nullptr, algo_name.data(), nullptr)), EVP_KDF_CTX_free };
-				const auto options = std::array
-				{
-					OSSL_PARAM_construct_octet_string("salt", (void*)salt.data(), salt.size()),
-					OSSL_PARAM_construct_octet_string("pass", (void*)password.data(), password.size()),
-					more_options...,
-					OSSL_PARAM_construct_end()
-				};
-				auto out = return_t(key_length, '\0');
-				auto ret = EVP_KDF_derive(context.get(), reinterpret_cast<byte_t*>(out.data()), key_length, options.data());
-				return out;
-			}
-		
 			template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 			auto pb_kdf2_hmac(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 			{
-				return run_kdf(password, key_length, salt, 
+				return details::key_derivation_base(password, key_length, salt,
 					"PBKDF2", 
+					OSSL_PARAM_construct_uint64("iter", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
 					OSSL_PARAM_construct_utf8_string("digest", const_cast<char*>(EVP_MD_name(underlying_hash())), 0)
 				);
 			}
-		
+
 			template <uint64_t r_block_size = 8, uint64_t p_parallelism_factor = 1>
 			auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 			{
 				constexpr auto r = r_block_size;
 				constexpr auto p = p_parallelism_factor;
-		
-				return run_kdf(password, key_length, salt,
+
+				return details::key_derivation_base(password, key_length, salt,
 					"scrypt",
 					OSSL_PARAM_construct_uint64("N", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
 					OSSL_PARAM_construct_size_t("r", const_cast<size_t*>(&r)),
