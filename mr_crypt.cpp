@@ -1,5 +1,7 @@
 #include <range/v3/view.hpp>
+#include <openssl/thread.h>
 #include <openssl/evp.h>
+#include <openssl/kdf.h>
 #include <openssl/pem.h>
 #include <random>
 #include <ranges>
@@ -172,44 +174,42 @@ namespace mr_crypt
 		template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
 		auto pb_kdf2_hmac(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 		{
-			auto out = return_t(key_length, '\0');
-			PKCS5_PBKDF2_HMAC(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), iterations, underlying_hash(), key_length, reinterpret_cast<byte_t*>(out.data()));
-			return out;
+			return details::key_derivation_base(password, key_length, salt,
+				"PBKDF2",
+				OSSL_PARAM_construct_uint64("iter", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
+				OSSL_PARAM_construct_utf8_string("digest", const_cast<char*>(EVP_MD_name(underlying_hash())), 0)
+			);
 		}
 
 		template <uint64_t r_block_size = 8, uint64_t p_parallelism_factor = 1>
 		auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 		{
-			auto out = return_t(key_length, '\0');
-			EVP_PBE_scrypt(password.data(), password.size(), reinterpret_cast<const byte_t*>(salt.data()), salt.size(), iterations, r_block_size, p_parallelism_factor, 0, reinterpret_cast<byte_t*>(out.data()), key_length);
-			return out;
+			constexpr auto r = r_block_size;
+			constexpr auto p = p_parallelism_factor;
+
+			return details::key_derivation_base(password, key_length, salt,
+				"scrypt",
+				OSSL_PARAM_construct_uint64("N", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
+				OSSL_PARAM_construct_size_t("r", const_cast<std::remove_const_t<decltype(r)>*>(&r)),
+				OSSL_PARAM_construct_size_t("p", const_cast<std::remove_const_t<decltype(p)>*>(&p))
+			);
 		}
 
-		namespace v2
+		template<uint32_t t_threads = 2, uint32_t l_lanes = 2, uint32_t m_memcost = 65536>
+		auto argon2_id(const view_t password, const size_t key_length, const view_t salt, const size_t iterations = 1) noexcept
 		{
-			template <hash_f_t underlying_hash = eternal::std_digest_alg.underlying_f>
-			auto pb_kdf2_hmac(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
-			{
-				return details::key_derivation_base(password, key_length, salt,
-					"PBKDF2", 
-					OSSL_PARAM_construct_uint64("iter", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
-					OSSL_PARAM_construct_utf8_string("digest", const_cast<char*>(EVP_MD_name(underlying_hash())), 0)
-				);
-			}
+			constexpr auto t = t_threads;
+			constexpr auto l = l_lanes;
+			constexpr auto m = m_memcost;
+			OSSL_set_max_threads(nullptr, t_threads);
 
-			template <uint64_t r_block_size = 8, uint64_t p_parallelism_factor = 1>
-			auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
-			{
-				constexpr auto r = r_block_size;
-				constexpr auto p = p_parallelism_factor;
-
-				return details::key_derivation_base(password, key_length, salt,
-					"scrypt",
-					OSSL_PARAM_construct_uint64("N", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
-					OSSL_PARAM_construct_size_t("r", const_cast<size_t*>(&r)),
-					OSSL_PARAM_construct_size_t("p", const_cast<size_t*>(&p))
-				);
-			}
+			return details::key_derivation_base(password, key_length, salt,
+				"argon2id",
+				OSSL_PARAM_construct_uint64("iter", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
+				OSSL_PARAM_construct_uint32("threads", const_cast<uint32_t*>(&t)),
+				OSSL_PARAM_construct_uint32("lanes", const_cast<uint32_t*>(&l)),
+				OSSL_PARAM_construct_uint32("memcost", const_cast<uint32_t*>(&m))
+			);
 		}
 	}
 
