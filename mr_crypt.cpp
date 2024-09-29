@@ -213,6 +213,11 @@ namespace mr_crypt
 		}
 	}
 
+	namespace forging
+	{
+		// Adapters Here
+	}
+
 	namespace details
 	{
 		namespace convert
