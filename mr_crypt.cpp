@@ -204,9 +204,7 @@ namespace mr_crypt
 		template <uint64_t r_block_size = 8, uint64_t p_parallelism_factor = 1>
 		auto pbe_scrypt(const view_t password, const size_t key_length, const view_t salt = {}, const size_t iterations = eternal::std_iterations) noexcept
 		{
-			constexpr auto r = r_block_size;
-			constexpr auto p = p_parallelism_factor;
-
+			constexpr auto r = r_block_size, p = p_parallelism_factor;
 			return details::kdf_base(password, key_length, salt,
 				"scrypt",
 				OSSL_PARAM_construct_uint64("N", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
@@ -218,11 +216,8 @@ namespace mr_crypt
 		template <uint32_t t_threads = 2, uint32_t l_lanes = 2, uint32_t m_memcost = 65536>
 		auto argon2_id(const view_t password, const size_t key_length, const view_t salt, const size_t iterations = 1) noexcept
 		{
-			constexpr auto t = t_threads;
-			constexpr auto l = l_lanes;
-			constexpr auto m = m_memcost;
+			constexpr auto t = t_threads, l = l_lanes, m = m_memcost;
 			OSSL_set_max_threads(nullptr, t_threads);
-
 			return details::kdf_base(password, key_length, salt,
 				"argon2id",
 				OSSL_PARAM_construct_uint64("iter", const_cast<std::remove_const_t<decltype(iterations)>*>(&iterations)),
