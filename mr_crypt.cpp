@@ -487,7 +487,7 @@ namespace mr_crypt
 		using key_ptr_t = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
 		using context_ptr_t = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
 
-		key_ptr_t generate_keypair(size_t bits = 2048)
+		auto generate_keypair(size_t bits = 2048)
 		{
 			auto key = key_ptr_t(nullptr, EVP_PKEY_free);
 			auto ctx = context_ptr_t(EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr), EVP_PKEY_CTX_free);
@@ -495,7 +495,7 @@ namespace mr_crypt
 
 			EVP_PKEY_keygen_init(ctx.get());
 			EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), bits);
-			EVP_PKEY_keygen(ctx.get(), std::inout_ptr(key));
+			EVP_PKEY_keygen(ctx.get(), std::out_ptr(key));
 
 			return key;
 		}
