@@ -182,25 +182,13 @@ namespace mr_crypt
 				for (size_t i = 0; i < input.size(); ++i)
 				{
 					auto group = static_cast<byte_t>(input[i]) << 16;
-					if (++i < input.size())
-					{
-						group |= static_cast<byte_t>(input[i]) << 8;
-					}
-					if (++i < input.size())
-					{
-						group |= static_cast<byte_t>(input[i]);
-					}
+					group |= ++i < input.size() ? static_cast<byte_t>(input[i]) << 8 : 0;
+					group |= ++i < input.size() ? static_cast<byte_t>(input[i]) : 0;
 
 					*it_out++ = base64_table[group >> 18 & 0x3F];
 					*it_out++ = base64_table[group >> 12 & 0x3F];
-					if (i - 1 < input.size())
-					{
-						*it_out++ = base64_table[group >> 6 & 0x3F];
-					}
-					if (i < input.size())
-					{
-						*it_out++ = base64_table[group & 0x3F];
-					}
+					*it_out++ = i - 1 < input.size() ? base64_table[group >> 6 & 0x3F] : m_padding;
+					*it_out++ = i < input.size() ? base64_table[group & 0x3F] : m_padding;
 				}
 
 				return output;
