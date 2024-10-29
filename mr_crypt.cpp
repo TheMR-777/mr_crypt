@@ -175,22 +175,17 @@ namespace mr_crypt
 
 			auto to_base64(const view_t input) noexcept
 			{
-				auto const o_size = ((4 * input.size() / 3) + 3) & ~3;
-				auto output = return_t(o_size, '=');
-				auto it_out = output.begin();
-
-				for (size_t i = 0; i < input.size(); ++i)
+				auto output = return_t(((4 * input.size() / 3) + 3) & ~3, m_padding);
+				for (auto [i, _it] = std::pair{ size_t{}, output.begin() }; i < input.size(); ++i)
 				{
 					auto group = static_cast<byte_t>(input[i]) << 16;
 					group |= ++i < input.size() ? static_cast<byte_t>(input[i]) << 8 : 0;
 					group |= ++i < input.size() ? static_cast<byte_t>(input[i]) : 0;
-
-					*it_out++ = base64_table[group >> 18 & 0x3F];
-					*it_out++ = base64_table[group >> 12 & 0x3F];
-					*it_out++ = i - 1 < input.size() ? base64_table[group >> 6 & 0x3F] : m_padding;
-					*it_out++ = i < input.size() ? base64_table[group & 0x3F] : m_padding;
+					*_it++ = base64_table[group >> 18 & 0x3F];
+					*_it++ = base64_table[group >> 12 & 0x3F];
+					*_it++ = i - 1 < input.size() ? base64_table[group >> 6 & 0x3F] : m_padding;
+					*_it++ = i < input.size() ? base64_table[group & 0x3F] : m_padding;
 				}
-
 				return output;
 			}
 
