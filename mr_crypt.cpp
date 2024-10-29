@@ -179,27 +179,25 @@ namespace mr_crypt
 				auto output = return_t(o_size, '=');
 				auto it_out = output.begin();
 
-				for (size_t i = 0; i < input.size(); i += 3)
+				for (size_t i = 0; i < input.size(); ++i)
 				{
-					// Get the three bytes as an unsigned integer
 					auto group = static_cast<byte_t>(input[i]) << 16;
-					if (i + 1 < input.size())
+					if (++i < input.size())
 					{
-						group |= static_cast<byte_t>(input[i + 1]) << 8;
+						group |= static_cast<byte_t>(input[i]) << 8;
 					}
-					if (i + 2 < input.size())
+					if (++i < input.size())
 					{
-						group |= static_cast<byte_t>(input[i + 2]);
+						group |= static_cast<byte_t>(input[i]);
 					}
 
-					// Encode the four base64 characters from the group
 					*it_out++ = base64_table[group >> 18 & 0x3F];
 					*it_out++ = base64_table[group >> 12 & 0x3F];
-					if (i + 1 < input.size())
+					if (i - 1 < input.size())
 					{
 						*it_out++ = base64_table[group >> 6 & 0x3F];
 					}
-					if (i + 2 < input.size())
+					if (i < input.size())
 					{
 						*it_out++ = base64_table[group & 0x3F];
 					}
