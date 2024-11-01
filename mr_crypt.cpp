@@ -183,8 +183,8 @@ namespace mr_crypt
 					group |= ++i < input.size() ? static_cast<byte_t>(input[i]) : 0;
 					*_it++ = base64_table[group >> 18 & 0x3F];
 					*_it++ = base64_table[group >> 12 & 0x3F];
-					*_it++ = i - 1 < input.size() ? base64_table[group >> 6 & 0x3F] : m_padding;
-					*_it++ = i < input.size() ? base64_table[group & 0x3F] : m_padding;
+					*_it++ = --i < input.size() ? base64_table[group >> 6 & 0x3F] : m_padding;
+					*_it++ = ++i < input.size() ? base64_table[group & 0x3F] : m_padding;
 				}
 				return output;
 			}
